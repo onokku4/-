@@ -1,0 +1,122 @@
+import type { BadgeId, Bed, Condition, GardenState, HarvestRecord, Plant, SoilTypeId, WeatherState } from "../types";
+import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
+import { BADGES } from "../data/game";
+import { initialState } from "./garden";
+import { CONDITIONS, DEFAULT_WEATHER, clampTemp } from "./weather";
+
+export const STORE_KEY = "sodateru-niwa:v2";
+
+type Raw = Record<string, unknown>;
+const isObj = (v: unknown): v is Raw => typeof v === "object" && v !== null && !Array.isArray(v);
+const str = (v: unknown, fallback = ""): string => (typeof v === "string" ? v : fallback);
+const strOrNull = (v: unknown): string | null => (typeof v === "string" ? v : null);
+const num = (v: unknown, fallback = 0): number => (typeof v === "number" && Number.isFinite(v) ? v : fallback);
+const list = (v: unknown): Raw[] => (Array.isArray(v) ? v.filter(isObj) : []);
+const pct = (v: unknown): number => Math.min(100, Math.max(0, num(v, 100)));
+
+const SOILS: readonly SoilTypeId[] = ["planter", "field", "hydro"];
+const isSoil = (v: unknown): v is SoilTypeId => SOILS.includes(v as SoilTypeId);
+const isCondition = (v: unknown): v is Condition => CONDITIONS.some((c) => c.id === v);
+const isBadge = (v: unknown): v is BadgeId => BADGES.some((b) => b.id === v);
+
+const toBed = (r: Raw): Bed | undefined =>
+  typeof r.id === "string"
+    ? { id: r.id, name: str(r.name, "プランター"), type: isSoil(r.type) ? r.type : "planter", uses: num(r.uses), n: pct(r.n), p: pct(r.p), k: pct(r.k) }
+    : undefined;
+
+/** カタログにない作物・存在しない場所を指す株は捨てる */
+const toPlant = (r: Raw, bedIds: Set<string>, fallbackBed: string): Plant | undefined => {
+  const crop = findCrop(str(r.cropId));
+  if (!crop || typeof r.uid !== "string" || typeof r.plantedDate !== "string") return undefined;
+  const variety = varietyOf(crop, str(r.varietyId) || undefined);
+  const bedId = str(r.bedId);
+  return {
+    uid: r.uid,
+    cropId: crop.id,
+    varietyId: variety.id,
+    projectName: str(r.projectName) || defaultProjectName(crop, variety),
+    plantedDate: r.plantedDate,
+    lastWater: strOrNull(r.lastWater),
+    bedId: bedIds.has(bedId) ? bedId : fallbackBed,
+    harvestCount: num(r.harvestCount),
+  };
+};
+
+const toRecord = (r: Raw): HarvestRecord | undefined =>
+  typeof r.id === "string" && typeof r.harvestDate === "string"
+    ? {
+        id: r.id,
+        cropId: str(r.cropId),
+        cropName: str(r.cropName, "作物"),
+        varietyName: str(r.varietyName),
+        projectName: str(r.projectName) || str(r.cropName, "作物"),
+        emoji: str(r.emoji, "🌱"),
+        bedName: str(r.bedName),
+        soilLabel: str(r.soilLabel),
+        plantedDate: str(r.plantedDate, r.harvestDate),
+        harvestDate: r.harvestDate,
+        days: num(r.days),
+      }
+    : undefined;
+
+/** v1 は天気を文字列1つ（hot/cold含む）で持っていた */
+const toWeather = (v: unknown): WeatherState => {
+  if (typeof v === "string") {
+    if (v === "hot") return { current: { condition: "sunny", tempC: 33 }, auto: null };
+    if (v === "cold") return { current: { condition: "cloudy", tempC: 3 }, auto: null };
+    return isCondition(v) ? { current: { condition: v, tempC: 20 }, auto: null } : DEFAULT_WEATHER;
+  }
+  if (!isObj(v) || !isObj(v.current) || !isCondition(v.current.condition)) return DEFAULT_WEATHER;
+  const current = { condition: v.current.condition, tempC: clampTemp(num(v.current.tempC, 20)) };
+  const a = v.auto;
+  const auto =
+    isObj(a) && isCondition(a.condition) && typeof a.fetchedAt === "string"
+      ? { condition: a.condition, tempC: clampTemp(num(a.tempC, 20)), fetchedAt: a.fetchedAt }
+      : null;
+  return { current, auto };
+};
+
+const defined = <T>(v: T | undefined): v is T => v !== undefined;
+
+/** 保存データ（旧形式・壊れた値を含む）を現在の GardenState に正規化する */
+export function normalize(raw: unknown): GardenState {
+  const base = initialState();
+  if (!isObj(raw)) return base;
+  const beds = list(raw.beds).map(toBed).filter(defined);
+  const safeBeds = beds.length > 0 ? beds : base.beds;
+  const bedIds = new Set(safeBeds.map((b) => b.id));
+  return {
+    plants: list(raw.plants).map((p) => toPlant(p, bedIds, safeBeds[0]!.id)).filter(defined),
+    beds: safeBeds,
+    harvestLog: list(raw.harvestLog).map(toRecord).filter(defined),
+    xp: Math.max(0, num(raw.xp)),
+    streak: Math.max(0, num(raw.streak)),
+    lastCareDate: strOrNull(raw.lastCareDate),
+    waterCount: Math.max(0, num(raw.waterCount)),
+    earnedBadges: Array.isArray(raw.earnedBadges) ? [...new Set(raw.earnedBadges.filter(isBadge))] : [],
+    weather: toWeather(raw.weather),
+    autoWeather: raw.autoWeather === true,
+    notifyOn: raw.notifyOn === true,
+    notifyTime: /^\d{2}:\d{2}$/.test(str(raw.notifyTime)) ? str(raw.notifyTime) : base.notifyTime,
+    lastNotifyDate: strOrNull(raw.lastNotifyDate),
+  };
+}
+
+export function load(): GardenState {
+  try {
+    const text = localStorage.getItem(STORE_KEY);
+    return text ? normalize(JSON.parse(text)) : initialState();
+  } catch {
+    return initialState();
+  }
+}
+
+/** 保存できなければ false（容量超過やプライベートモードなど） */
+export function save(state: GardenState): boolean {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    return true;
+  } catch {
+    return false;
+  }
+}

@@ -1,0 +1,431 @@
+import type { Crop } from "../types";
+
+/** 定番の野菜・ハーブ・イチゴ（旧バージョンから移植） */
+export const VEGETABLES: Crop[] = [
+  {
+    id: "tomato",
+    name: "トマト",
+    emoji: "🍅",
+    category: "果菜",
+    season: "春〜夏",
+    waterEvery: 2,
+    sun: "日なた",
+    feed: {
+      n: 4,
+      p: 7,
+      k: 8,
+    },
+    varieties: [
+      {
+        id: "momotaro",
+        name: "桃太郎",
+        days: 90,
+        tip: "定番の大玉。雨で実が割れやすいので梅雨は雨よけを。完熟手前で収穫すると日持ちする。",
+      },
+      {
+        id: "aiko",
+        name: "アイコ",
+        days: 75,
+        tip: "甘みの強い縦長ミニ。皮が厚く裂果に強い。鈴なりになるので支柱と摘果でバランスを。",
+      },
+      {
+        id: "chika",
+        name: "千果（ミニ）",
+        days: 70,
+        tip: "初心者向けの育てやすいミニ。プランターでもよく成る。脇芽1本を伸ばす2本仕立てが◎。",
+      },
+      {
+        id: "fruity",
+        name: "フルーツトマト系",
+        days: 95,
+        tip: "高糖度を狙うなら水を絞るのがコツ。最終盤の灌水は控えめに。ストレスをかけると甘くなる。",
+      },
+      {
+        id: "zebra",
+        name: "グリーンゼブラ",
+        days: 85,
+        tip: "緑のしま模様が美しいエアルーム種。完熟しても黄緑なので、押して柔らかさで判断する。",
+      },
+    ],
+    pollination: {
+      kind: "self",
+    },
+    pollinationTip: "花房を指で軽く弾いて揺らすと着果が安定する。",
+  },
+  {
+    id: "basil",
+    name: "バジル",
+    emoji: "🌿",
+    category: "ハーブ",
+    season: "春〜夏",
+    waterEvery: 1,
+    sun: "日なた",
+    feed: {
+      n: 4,
+      p: 2,
+      k: 2,
+    },
+    varieties: [
+      {
+        id: "sweet",
+        name: "スイートバジル",
+        days: 60,
+        tip: "最も一般的。トマト料理に最適。花が咲くと葉が硬くなるので花穂は早めに摘む。",
+      },
+      {
+        id: "purple",
+        name: "ダークオパール（紫）",
+        days: 65,
+        tip: "赤紫の葉が美しい観賞も兼ねる品種。ビネガーに漬けるときれいなピンクに。やや生育ゆっくり。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+  {
+    id: "lettuce",
+    name: "レタス",
+    emoji: "🥬",
+    category: "葉物",
+    season: "春・秋",
+    waterEvery: 2,
+    sun: "半日陰OK",
+    feed: {
+      n: 7,
+      p: 2,
+      k: 3,
+    },
+    varieties: [
+      {
+        id: "frill",
+        name: "フリルレタス",
+        days: 45,
+        tip: "結球しないリーフ型。外葉からかき採れば長期間収穫可能。家庭菜園で一番作りやすい。",
+      },
+      {
+        id: "romaine",
+        name: "ロメイン",
+        days: 60,
+        tip: "シャキッとした半結球型。シーザーサラダ向き。株間を広めにとると大きく育つ。",
+      },
+      {
+        id: "tama",
+        name: "玉レタス",
+        days: 70,
+        tip: "結球タイプは難度やや高め。涼しい時期に。結球前の高温でとう立ちしやすい点に注意。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+  {
+    id: "eggplant",
+    name: "ナス",
+    emoji: "🍆",
+    category: "果菜",
+    season: "夏",
+    waterEvery: 1,
+    sun: "日なた",
+    feed: {
+      n: 6,
+      p: 7,
+      k: 8,
+    },
+    varieties: [
+      {
+        id: "senryo",
+        name: "千両二号",
+        days: 100,
+        tip: "中長ナスの定番。長期間とれる。盛夏は枝を切り戻す『更新剪定』で秋ナスを楽しめる。",
+      },
+      {
+        id: "beinasu",
+        name: "米ナス",
+        days: 110,
+        tip: "大型でヘタが緑。田楽やステーキ向き。実が重いので支柱をしっかり。肥料食いなので追肥多めに。",
+      },
+      {
+        id: "kamonasu",
+        name: "賀茂ナス",
+        days: 105,
+        tip: "京都の伝統野菜・丸ナス。1株あたりの収穫数は少なめだが、肉質がしまり煮物・田楽で絶品。",
+      },
+      {
+        id: "long",
+        name: "長ナス",
+        days: 95,
+        tip: "30cm近くになる細長型。皮が柔らかく焼きナスに最適。風で折れやすいので支柱を早めに。",
+      },
+    ],
+    pollination: {
+      kind: "self",
+    },
+    pollinationTip: "雌しべが雄しべより短い花は肥料・水不足のサイン。",
+  },
+  {
+    id: "cucumber",
+    name: "キュウリ",
+    emoji: "🥒",
+    category: "果菜",
+    season: "夏",
+    waterEvery: 1,
+    sun: "日なた",
+    feed: {
+      n: 5,
+      p: 6,
+      k: 7,
+    },
+    varieties: [
+      {
+        id: "fushinari",
+        name: "節成りキュウリ",
+        days: 60,
+        tip: "各節に実がつき収穫量が多い。採り遅れると株が疲れるので毎日チェックして若採りを。",
+      },
+      {
+        id: "kaga",
+        name: "加賀太キュウリ",
+        days: 80,
+        tip: "太く大型の地方品種。煮物やあんかけに。実が大きいので2〜3本に絞ると充実する。",
+      },
+      {
+        id: "mini",
+        name: "ミニキュウリ",
+        days: 50,
+        tip: "10cm前後で収穫する小型種。プランターでも作りやすく、ピクルスや浅漬けに最適。",
+      },
+    ],
+    pollination: {
+      kind: "parthenocarpic",
+    },
+    pollinationTip: "受粉しなくても実が太る。人工授粉は不要。",
+  },
+  {
+    id: "pepper",
+    name: "ピーマン",
+    emoji: "🫑",
+    category: "果菜",
+    season: "夏",
+    waterEvery: 2,
+    sun: "日なた",
+    feed: {
+      n: 5,
+      p: 6,
+      k: 7,
+    },
+    varieties: [
+      {
+        id: "kyomidori",
+        name: "京みどり",
+        days: 80,
+        tip: "育てやすい中型種。次々と実をつける。一番果は早採りして株の充実を優先。",
+      },
+      {
+        id: "paprika",
+        name: "パプリカ",
+        days: 110,
+        tip: "完熟まで時間がかかるぶん肥料と日光をたっぷり。色づくまで2か月待つ価値あり。",
+      },
+    ],
+    pollination: {
+      kind: "self",
+    },
+    pollinationTip: "高温期は花が落ちやすい。水切れに注意。",
+  },
+  {
+    id: "radish",
+    name: "ラディッシュ",
+    emoji: "🌶️",
+    category: "根菜",
+    season: "ほぼ通年",
+    waterEvery: 2,
+    sun: "日なた",
+    feed: {
+      n: 2,
+      p: 2,
+      k: 4,
+    },
+    varieties: [
+      {
+        id: "comet",
+        name: "コメット（赤丸）",
+        days: 30,
+        tip: "最もポピュラーな赤丸。30日で収穫。採り遅れると割れるので適期を逃さず。",
+      },
+      {
+        id: "white",
+        name: "白長ラディッシュ",
+        days: 35,
+        tip: "細長い白型。サラダや浅漬けに。やや深さのある容器だと根が真っ直ぐ伸びる。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+  {
+    id: "mint",
+    name: "ミント",
+    emoji: "🍃",
+    category: "ハーブ",
+    season: "春〜秋",
+    waterEvery: 2,
+    sun: "半日陰OK",
+    feed: {
+      n: 3,
+      p: 1,
+      k: 2,
+    },
+    varieties: [
+      {
+        id: "spear",
+        name: "スペアミント",
+        days: 45,
+        tip: "料理向きのまろやかな香り。モヒートやお茶に。地下茎で広がるので必ず鉢で管理を。",
+      },
+      {
+        id: "pepper",
+        name: "ペパーミント",
+        days: 45,
+        tip: "清涼感が強くスイーツ向き。スペアミントより香りが鋭い。半日陰でもよく育つ。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+  {
+    id: "strawberry",
+    name: "イチゴ",
+    emoji: "🍓",
+    category: "ベリー",
+    season: "春",
+    waterEvery: 2,
+    sun: "日なた",
+    feed: {
+      n: 3,
+      p: 6,
+      k: 6,
+    },
+    varieties: [
+      {
+        id: "shoutoku",
+        name: "宝交早生",
+        days: 120,
+        tip: "病気に強く家庭菜園の定番。甘酸っぱい。秋植え→春収穫。冬の寒さに当てると花芽がつく。",
+      },
+      {
+        id: "shikinari",
+        name: "四季なりイチゴ",
+        days: 90,
+        tip: "春と秋に複数回収穫できる。少量ずつ長く楽しめる。実つきを保つため早めの摘果を。",
+      },
+      {
+        id: "tochiotome",
+        name: "とちおとめ",
+        days: 130,
+        tip: "大粒で甘みが強い人気品種。やや病害に注意。冬は防寒、開花後は受粉のため軽く花を撫でると◎。",
+      },
+    ],
+    soils: ["planter", "field", "hydro"],
+    pollination: {
+      kind: "self",
+    },
+    pollinationTip: "虫の少ないベランダでは筆で花の中心をなでると形の良い実になる。",
+  },
+  {
+    id: "spinach",
+    name: "ホウレンソウ",
+    emoji: "🥬",
+    category: "葉物",
+    season: "秋・冬",
+    waterEvery: 3,
+    sun: "半日陰OK",
+    feed: {
+      n: 8,
+      p: 2,
+      k: 3,
+    },
+    varieties: [
+      {
+        id: "western",
+        name: "西洋種",
+        days: 40,
+        tip: "葉が丸く育てやすい。サラダにも。秋まきが失敗しにくい。酸性土を嫌うので石灰で中和を。",
+      },
+      {
+        id: "chijimi",
+        name: "ちぢみほうれん草",
+        days: 60,
+        tip: "寒さに当てて葉を縮ませる冬の味覚。糖度が上がり濃厚。霜が甘さを引き出す。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+  {
+    id: "carrot",
+    name: "ニンジン",
+    emoji: "🥕",
+    category: "根菜",
+    season: "春・秋",
+    waterEvery: 3,
+    sun: "日なた",
+    feed: {
+      n: 3,
+      p: 4,
+      k: 7,
+    },
+    varieties: [
+      {
+        id: "gosun",
+        name: "五寸にんじん",
+        days: 110,
+        tip: "標準サイズの定番。発芽が命なので種まき後は乾かさない。間引きで形よく太る。",
+      },
+      {
+        id: "mini",
+        name: "ミニキャロット",
+        days: 70,
+        tip: "プランター向きの短根種。浅い容器でもOK。密植気味でも育つので家庭菜園に最適。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+  {
+    id: "shiso",
+    name: "シソ",
+    emoji: "🌱",
+    category: "ハーブ",
+    season: "夏",
+    waterEvery: 2,
+    sun: "半日陰OK",
+    feed: {
+      n: 5,
+      p: 2,
+      k: 3,
+    },
+    varieties: [
+      {
+        id: "green",
+        name: "青じそ（大葉）",
+        days: 50,
+        tip: "薬味の定番。摘心で次々と脇芽が出る。乾燥に注意すれば真夏もぐんぐん育つ。",
+      },
+      {
+        id: "red",
+        name: "赤じそ",
+        days: 55,
+        tip: "梅干しや赤しそジュース用。葉が赤紫。日当たりが良いほど発色が濃くなる。",
+      },
+    ],
+    pollination: {
+      kind: "none",
+    },
+  },
+];

@@ -1,0 +1,131 @@
+export type SoilTypeId = "planter" | "field" | "hydro";
+export type Category = "果菜" | "葉物" | "根菜" | "ハーブ" | "ベリー" | "果樹";
+export type Bloom = "early" | "mid" | "late";
+
+/**
+ * 受粉特性。品種に指定があれば作物の既定値より優先する。
+ * group が同じ品種どうしだけが受粉相手になる（例: ブルーベリーの系統）。
+ */
+export type Pollination =
+  | { kind: "none" } // 葉・根を収穫するので受粉不要
+  | { kind: "parthenocarpic" } // 受粉なしで実がなる（単為結果）
+  | { kind: "self" } // 1株で結実（自家結実性）
+  | { kind: "selfHelped"; group: string; bloom: Bloom } // 1株でもなるが別品種で実つき向上
+  | { kind: "cross"; group: string; bloom: Bloom; goodPollinizer?: true } // 別品種が必須
+  | { kind: "dioecious"; sex: "female" | "male"; bloom: Bloom } // 雌雄異株
+  | { kind: "monoecious" } // 雌雄異花。人工授粉推奨
+  | { kind: "wind"; minPlants: number }; // 風媒。同品種をまとめ植え
+
+export interface Nutrients {
+  n: number;
+  p: number;
+  k: number;
+}
+
+export interface Variety {
+  id: string;
+  name: string;
+  /** 植え付けから最初の収穫までの目安日数 */
+  days: number;
+  tip: string;
+  pollination?: Pollination;
+}
+
+export interface Crop {
+  id: string;
+  name: string;
+  emoji: string;
+  category: Category;
+  season: string;
+  /** プランター・晴れ・適温での水やり間隔（日） */
+  waterEvery: number;
+  sun: string;
+  feed: Nutrients;
+  pollination: Pollination;
+  /** 受粉・着果を安定させるひとこと */
+  pollinationTip?: string;
+  /** 収穫後も株が残る（果樹・ベリーなど） */
+  perennial?: true;
+  /** 収穫期の月（1〜12）。多年生で使う */
+  harvestMonths?: number[];
+  /** この気温(℃)を下回ると防寒が必要 */
+  coldTenderBelowC?: number;
+  /** 植えられる場所。省略時はすべて可 */
+  soils?: SoilTypeId[];
+  varieties: [Variety, ...Variety[]];
+}
+
+export interface PlantRef {
+  cropId: string;
+  varietyId: string;
+}
+
+export interface Plant extends PlantRef {
+  uid: string;
+  projectName: string;
+  plantedDate: string; // YYYY-MM-DD（ローカル日付）
+  lastWater: string | null;
+  bedId: string;
+  harvestCount: number;
+}
+
+export interface Bed extends Nutrients {
+  id: string;
+  name: string;
+  type: SoilTypeId;
+  uses: number;
+}
+
+export interface HarvestRecord {
+  id: string;
+  cropId: string;
+  cropName: string;
+  varietyName: string;
+  projectName: string;
+  emoji: string;
+  bedName: string;
+  soilLabel: string;
+  plantedDate: string;
+  harvestDate: string;
+  days: number;
+}
+
+export type Condition = "sunny" | "cloudy" | "rainy" | "snowy" | "windy";
+
+export interface WeatherReading {
+  condition: Condition;
+  tempC: number;
+}
+
+export interface WeatherState {
+  /** 水やり計算に使う値。自動取得後に人が調整できる */
+  current: WeatherReading;
+  /** 最後に自動取得した値（未取得なら null）。位置情報そのものは保持しない */
+  auto: (WeatherReading & { fetchedAt: string }) | null;
+}
+
+export type BadgeId =
+  | "first"
+  | "water10"
+  | "streak7"
+  | "variety5"
+  | "harvest"
+  | "green"
+  | "fruit"
+  | "matchmaker";
+
+export interface GardenState {
+  plants: Plant[];
+  beds: Bed[];
+  harvestLog: HarvestRecord[];
+  xp: number;
+  streak: number;
+  lastCareDate: string | null;
+  waterCount: number;
+  earnedBadges: BadgeId[];
+  weather: WeatherState;
+  autoWeather: boolean;
+  notifyOn: boolean;
+  notifyTime: string; // HH:MM
+  lastNotifyDate: string | null;
+}
