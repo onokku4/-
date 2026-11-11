@@ -20,6 +20,7 @@ export const FRUITS: Crop[] = [
     pollination: { kind: "cross", group: "rabbiteye", bloom: "mid" },
     pollinationTip: "同じ系統の別品種を並べるのが基本。ハイブッシュ系とラビットアイ系は相手にならない。",
     perennial: true,
+    acidSoil: true,
     harvestMonths: [6, 7, 8],
     soils: TREE_SOILS,
     varieties: [

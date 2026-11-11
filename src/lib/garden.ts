@@ -3,7 +3,7 @@ import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilTy
 import { GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
 import { diagnose } from "./pollination";
-import { afterHarvest, newBed, refreshed } from "./soil";
+import { afterHarvest, fed, newBed, refreshed } from "./soil";
 import { DEFAULT_WEATHER, adjust, applyAuto, resetToAuto } from "./weather";
 
 /** 状態遷移はすべてここを通す。純粋関数なので日付とIDは呼び出し側が渡す */
@@ -12,8 +12,9 @@ export type Action =
   | { type: "water"; uid: string; today: string }
   | { type: "harvest"; uid: string; recordId: string; today: string }
   | { type: "remove"; uid: string }
-  | { type: "addBed"; id: string; soil: SoilTypeId; name?: string }
-  | { type: "refreshBed"; bedId: string; today: string }
+  | { type: "addBed"; id: string; soil: SoilTypeId; name?: string; soilMix?: string; today: string }
+  | { type: "refreshBed"; bedId: string; today: string; soilMix?: string }
+  | { type: "feedBed"; bedId: string; fertilizer: string; today: string }
   | { type: "weatherAuto"; reading: WeatherReading; fetchedAt: string }
   | { type: "weatherAdjust"; patch: Partial<WeatherReading> }
   | { type: "weatherReset" }
@@ -140,7 +141,8 @@ export function apply(s: GardenState, a: Action): Outcome {
       const plants = r.crop.perennial
         ? s.plants.map((p) => (p.uid === a.uid ? { ...p, harvestCount: p.harvestCount + 1 } : p))
         : s.plants.filter((p) => p.uid !== a.uid);
-      const beds = s.beds.map((b) => (b.id === bed?.id ? afterHarvest(b, r.crop) : b));
+      const growing = s.plants.filter((p) => p.bedId === bed?.id).length;
+      const beds = s.beds.map((b) => (b.id === bed?.id ? afterHarvest(b, r.crop, growing, a.today) : b));
       const next = cared({ ...s, plants, beds, harvestLog: [record, ...s.harvestLog] }, XP.harvest, a.today);
       return { ...award(s, next), toast: `🧺 「${plant.projectName}」を収穫！履歴に記録 +${XP.harvest}XP` };
     }
@@ -154,7 +156,7 @@ export function apply(s: GardenState, a: Action): Outcome {
     case "addBed": {
       const name = a.name?.trim() || bedLabel(s.beds, a.soil);
       return {
-        state: { ...s, beds: [...s.beds, newBed(a.id, name, a.soil)] },
+        state: { ...s, beds: [...s.beds, newBed(a.id, name, a.soil, a.soilMix ?? null, a.today)] },
         newBadges: [],
         toast: `${soilType(a.soil).emoji} 「${name}」を追加しました`,
       };
@@ -163,9 +165,19 @@ export function apply(s: GardenState, a: Action): Outcome {
     case "refreshBed": {
       const bed = s.beds.find((b) => b.id === a.bedId);
       if (!bed) return quiet(s);
-      const beds = s.beds.map((b) => (b.id === a.bedId ? refreshed(b) : b));
-      const what = bed.type === "hydro" ? "培養液を交換しました" : "土をリフレッシュしました";
+      const beds = s.beds.map((b) => (b.id === a.bedId ? refreshed(b, a.today, a.soilMix) : b));
+      const what = bed.type === "hydro" ? "培養液を交換しました" : a.soilMix ? "土を記録しました" : "土をリフレッシュしました";
       return { ...award(s, cared({ ...s, beds }, XP.refresh, a.today)), toast: `♻️ ${what}！ +${XP.refresh}XP` };
+    }
+
+    case "feedBed": {
+      const bed = s.beds.find((b) => b.id === a.bedId);
+      if (!bed) return quiet(s);
+      const growing = s.plants.filter((p) => p.bedId === a.bedId).length;
+      const next = fed(bed, a.fertilizer, growing, a.today);
+      if (!next) return quiet(s);
+      const beds = s.beds.map((b) => (b.id === a.bedId ? next : b));
+      return { ...award(s, cared({ ...s, beds }, XP.feed, a.today)), toast: `🌱 「${bed.name}」に追肥しました！ +${XP.feed}XP` };
     }
 
     case "weatherAuto":

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { History, Plus, Sprout } from "lucide-react";
 import { BADGES } from "./data/game";
 import { diagnose } from "./lib/pollination";
+import { feedSchedule } from "./lib/soil";
 import { plantStatus } from "./lib/watering";
 import { conditionInfo } from "./lib/weather";
 import { useAutoWeather } from "./hooks/useAutoWeather";
@@ -13,6 +14,7 @@ import { AddWizard } from "./components/AddWizard";
 import { BadgeGrid } from "./components/BadgeGrid";
 import { BadgePopup } from "./components/BadgePopup";
 import { BedSection } from "./components/BedSection";
+import { FeedAlert } from "./components/FeedAlert";
 import { Header } from "./components/Header";
 import { HistoryModal } from "./components/HistoryModal";
 import { NotifyCard } from "./components/NotifyCard";
@@ -28,6 +30,7 @@ export function App() {
   const today = useToday();
   const [showAdd, setShowAdd] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [feedTarget, setFeedTarget] = useState<string | null>(null);
   const { fetching, fetchNow } = useAutoWeather(state, dispatch, say);
 
   // 各株の水やり状態・受粉診断はここで1回だけ計算して配る
@@ -47,7 +50,11 @@ export function App() {
   );
   const due = useMemo(() => views.filter((v) => v.status.due), [views]);
   const dueNames = useMemo(() => due.map((v) => v.plant.projectName), [due]);
-  useWaterNotify(state, dueNames, dispatch, say);
+  const feedDue = useMemo(
+    () => state.beds.filter((b) => feedSchedule(b, state.plants.filter((p) => p.bedId === b.id).length, today).due),
+    [state.beds, state.plants, today],
+  );
+  useWaterNotify(state, dueNames, feedDue.map((b) => b.name), dispatch, say);
 
   const popupBadge = BADGES.find((b) => b.id === badgeQueue[0]);
 
@@ -64,10 +71,19 @@ export function App() {
       <main style={styles.main}>
         <StatusBar xp={state.xp} streak={state.streak} waterCount={state.waterCount} plantCount={state.plants.length} />
         <WaterAlert due={due} weatherLabel={conditionInfo(state.weather.current.condition).label} dispatch={dispatch} />
+        <FeedAlert due={feedDue} onPick={setFeedTarget} />
         <PollinationAlert views={views} />
         <NotifyCard notifyOn={state.notifyOn} notifyTime={state.notifyTime} dispatch={dispatch} say={say} />
 
-        <BedSection beds={state.beds} plants={state.plants} dispatch={dispatch} onAdd={() => setShowAdd(true)} />
+        <BedSection
+          beds={state.beds}
+          plants={state.plants}
+          today={today}
+          feedTarget={feedTarget}
+          onFeedTargetDone={() => setFeedTarget(null)}
+          dispatch={dispatch}
+          onAdd={() => setShowAdd(true)}
+        />
 
         <section>
           <div style={{ ...styles.sectionHead, marginTop: 26 }}>

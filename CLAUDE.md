@@ -25,12 +25,14 @@ src/data/               作物カタログ（データのみ、ロジックな�
   fruits.ts             果樹・ベリー
   catalog.ts            上記を束ねる。findCrop / resolve / soilType / canGrowIn
   game.ts               レベル・バッジ・XP
+  soils.ts              市販の培養土カタログ（初期栄養・元肥の持続日数・酸性）
+  fertilizers.ts        追肥の種類（戻る栄養・持続日数）
 src/lib/                純粋関数。React にも現在時刻にも依存しない
   garden.ts             apply(state, action) — 状態遷移はすべてここ
   pollination.ts        diagnose(target, others) — 受粉相性診断
   watering.ts           plantStatus — 水やり間隔・成長・収穫期・防寒
   weather.ts            天気区分・気温補正・位置情報からの自動取得
-  soil.ts               NPK と連用回数
+  soil.ts               NPK と連用回数。nutrientsOn（日数経過での減り）、fed（追肥）、feedSchedule（次の追肥日）
   storage.ts            localStorage 読み書き + normalize（旧形式・壊れた値の救済）
   date.ts               ローカル日付
 src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バッジ）
@@ -46,6 +48,8 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - `any` 禁止。不正な状態は型で表現できないようにする。`switch` は網羅させる。
 - 日付は `localDate()` を使う。`toISOString().slice(0,10)` はUTCなので日本の朝に前日になる。
 - 保存形式を変えたら `storage.ts` の `normalize` と往復テストを更新する。
+- 土の栄養（n/p/k）は「記録日 `nutrientsAt` 時点の値」。今日の値は `nutrientsOn()` で導出し、保存値を変える操作（収穫・追肥）の前に経過ぶんを反映する。
+- アプリは土の成分を**測れない**。`soils.ts` の値は一般的な目安で、袋の表示が優先。
 
 ## 作物を足すとき
 
@@ -81,4 +85,5 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - PWA 対応済み（ホーム画面に追加・オフライン起動）。ただし水やり通知はアプリを開いている間だけ届く。常時通知にはプッシュ通知用のサーバーが別途必要。
 - Service Worker は本番ビルド（`npm run build` → `npm run preview`）でのみ有効。`npm run dev` では動かない。
 - 配信先は https か localhost が必須（Service Worker の制約）。`base: "./"` なのでサブディレクトリ配信でも動く。
+- 土の種類・肥料の持続日数は一般的な目安。製品ごとの差は反映していない。
 - 候補: 連作障害の警告、収穫量の記録とグラフ、写真・メモ、データの書き出し/読み込み。

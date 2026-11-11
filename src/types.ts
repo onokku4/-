@@ -52,6 +52,8 @@ export interface Crop {
   coldTenderBelowC?: number;
   /** 植えられる場所。省略時はすべて可 */
   soils?: SoilTypeId[];
+  /** 酸性土が必須（ブルーベリーなど） */
+  acidSoil?: true;
   varieties: [Variety, ...Variety[]];
 }
 
@@ -74,6 +76,14 @@ export interface Bed extends Nutrients {
   name: string;
   type: SoilTypeId;
   uses: number;
+  /** 使っている市販の土（data/soils.ts の id）。未選択なら null */
+  soilMix: string | null;
+  /** n/p/k を記録した日。この日からの経過で栄養の減りを推定する。未記録なら減らない */
+  nutrientsAt: string | null;
+  /** 最後に肥料を入れた日（土を入れた日＝元肥、または追肥） */
+  fedAt: string | null;
+  /** 最後の追肥の種類（data/fertilizers.ts の id）。元肥だけなら null */
+  fertilizer: string | null;
 }
 
 export interface HarvestRecord {

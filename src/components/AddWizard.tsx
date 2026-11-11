@@ -30,13 +30,14 @@ export function AddWizard({ beds, plants, today, dispatch, onClose }: Props) {
   const [pickedBed, setPickedBed] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop | null>(null);
   const [newType, setNewType] = useState<SoilTypeId>("planter");
+  const [newMix, setNewMix] = useState<string>("veg");
 
   // 選択が未指定・無効なら先頭の場所。追加直後は pickedBed に新IDが入る
   const bed = beds.find((b) => b.id === pickedBed) ?? beds[0];
 
   const addBed = (soil: SoilTypeId) => {
     const id = newId();
-    dispatch({ type: "addBed", id, soil });
+    dispatch({ type: "addBed", id, soil, soilMix: soil === "hydro" ? undefined : newMix, today: localDate() });
     setPickedBed(id);
   };
 
@@ -74,8 +75,10 @@ export function AddWizard({ beds, plants, today, dispatch, onClose }: Props) {
           beds={beds}
           bedId={bed?.id ?? null}
           newType={newType}
+          newMix={newMix}
           onPick={setPickedBed}
           onPickType={setNewType}
+          onPickMix={setNewMix}
           onAddBed={addBed}
           onNext={() => setStep(2)}
         />

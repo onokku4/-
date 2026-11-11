@@ -171,6 +171,12 @@ export const styles = {
   },
   soilTypeLabel: { fontSize: 11.5, fontWeight: 700, color: "#3d4a35" },
   soilTypeDesc: { fontSize: 11, color: "#9aa089", lineHeight: 1.5, margin: "0 0 10px" },
+  mixField: { display: "flex", flexDirection: "column", gap: 5, marginBottom: 10 },
+  mixLabel: { fontSize: 11.5, fontWeight: 700, color: "#7a6a45" },
+  mixSelect: {
+    width: "100%", fontFamily: "var(--body)", fontSize: 13, padding: "8px 10px", borderRadius: 9,
+    border: "1.5px solid #d6cfbb", background: "#fff", color: "#3d4a35",
+  },
   addBedConfirm: {
     width: "100%", background: "#fff", border: "1.5px solid #d6cfbb", borderRadius: 10,
     padding: "9px 0", fontWeight: 700, fontSize: 12.5, color: "#6b9d4f",
@@ -262,6 +268,34 @@ export const styles = {
   npkTrack: { height: 7, background: "#eceadd", borderRadius: 4, overflow: "hidden" },
   npkFill: { height: "100%", borderRadius: 4, transition: "width .5s" },
   soilAdvice: { fontSize: 11.5, fontWeight: 700, display: "flex", alignItems: "center", gap: 6, lineHeight: 1.5 },
+  soilMixRow: {
+    display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#5a6b4d", flexWrap: "wrap",
+  },
+  soilMixLink: {
+    background: "transparent", border: "none", color: "#6b9d4f", fontWeight: 700, fontSize: 11.5,
+    cursor: "pointer", padding: 0, textDecoration: "underline",
+  },
+  feedBox: {
+    display: "flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 700, borderRadius: 9,
+    padding: "8px 11px", border: "1px solid", lineHeight: 1.5,
+  },
+  feedBtn: {
+    background: "#6b9d4f", color: "#fff", border: "none", borderRadius: 10,
+    padding: "9px 0", fontWeight: 700, fontSize: 12.5, cursor: "pointer",
+    display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+  },
+  pickList: { display: "flex", flexDirection: "column", gap: 6 },
+  pickTitle: { fontSize: 12, fontWeight: 700, color: "#7a6a45", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  pickItem: {
+    textAlign: "left", background: "#fff", border: "1.5px solid #e3ddcf", borderRadius: 10,
+    padding: "8px 11px", cursor: "pointer", display: "flex", flexDirection: "column", gap: 2,
+  },
+  pickName: { fontSize: 12.5, fontWeight: 700, color: "#3d4a35" },
+  pickDesc: { fontSize: 10.5, color: "#9aa089", lineHeight: 1.45 },
+  acidWarn: {
+    display: "flex", gap: 7, alignItems: "flex-start", background: "#fbe9e4", color: "#c0432a",
+    borderRadius: 9, padding: "8px 11px", fontSize: 11.5, fontWeight: 700, lineHeight: 1.5,
+  },
   refreshBtn: {
     background: "#f0ece0", color: "#8a6a3a", border: "1.5px solid #e0d6bf", borderRadius: 10,
     padding: "9px 0", fontWeight: 700, fontSize: 12.5, cursor: "pointer",

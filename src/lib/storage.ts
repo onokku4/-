@@ -3,6 +3,8 @@ import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
 import { CONDITIONS, DEFAULT_WEATHER, clampTemp } from "./weather";
+import { findFertilizer } from "../data/fertilizers";
+import { findSoilMix } from "../data/soils";
 
 export const STORE_KEY = "sodateru-niwa:v2";
 
@@ -21,7 +23,19 @@ const isBadge = (v: unknown): v is BadgeId => BADGES.some((b) => b.id === v);
 
 const toBed = (r: Raw): Bed | undefined =>
   typeof r.id === "string"
-    ? { id: r.id, name: str(r.name, "プランター"), type: isSoil(r.type) ? r.type : "planter", uses: num(r.uses), n: pct(r.n), p: pct(r.p), k: pct(r.k) }
+    ? {
+        id: r.id,
+        name: str(r.name, "プランター"),
+        type: isSoil(r.type) ? r.type : "planter",
+        uses: num(r.uses),
+        n: pct(r.n),
+        p: pct(r.p),
+        k: pct(r.k),
+        soilMix: findSoilMix(str(r.soilMix))?.id ?? null,
+        nutrientsAt: strOrNull(r.nutrientsAt),
+        fedAt: strOrNull(r.fedAt),
+        fertilizer: findFertilizer(str(r.fertilizer))?.id ?? null,
+      }
     : undefined;
 
 /** カタログにない作物・存在しない場所を指す株は捨てる */

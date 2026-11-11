@@ -11,25 +11,30 @@ export const NOTIFY_CHECK_MS = 30_000;
 export function useWaterNotify(
   state: Pick<GardenState, "notifyOn" | "notifyTime" | "lastNotifyDate">,
   dueNames: string[],
+  feedBedNames: string[],
   dispatch: (a: Action) => void,
   say: (m: string) => void,
 ) {
-  const latest = useRef({ state, dueNames });
+  const latest = useRef({ state, dueNames, feedBedNames });
   useEffect(() => {
-    latest.current = { state, dueNames };
+    latest.current = { state, dueNames, feedBedNames };
   });
 
   const on = state.notifyOn;
   useEffect(() => {
     if (!on) return;
     const check = () => {
-      const { state: s, dueNames: names } = latest.current;
+      const { state: s, dueNames: names, feedBedNames: feeds } = latest.current;
       const today = localDate();
       if (!shouldNotify(localTime(), s.notifyTime, s.lastNotifyDate, today)) return;
       dispatch({ type: "notified", today });
-      if (names.length === 0) return;
-      const body = `水やりのタイミング：${names.join("、")}`;
-      if (!showNativeNotification("そだてる庭", body)) say(`💧 ${body}`);
+      if (names.length === 0 && feeds.length === 0) return;
+      const parts = [
+        ...(names.length ? [`水やりのタイミング：${names.join("、")}`] : []),
+        ...(feeds.length ? [`追肥のタイミング：${feeds.join("、")}`] : []),
+      ];
+      const body = parts.join(" ／ ");
+      if (!showNativeNotification("そだてる庭", body)) say(`${names.length ? "💧" : "🌱"} ${body}`);
     };
     check();
     const id = setInterval(check, NOTIFY_CHECK_MS);

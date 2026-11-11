@@ -66,7 +66,7 @@ describe("状態遷移", () => {
   });
 
   it("果樹は水耕に植えられない", () => {
-    const s = run(initialState(), { type: "addBed", id: "h1", soil: "hydro" });
+    const s = run(initialState(), { type: "addBed", id: "h1", soil: "hydro", today: T });
     const out = apply(s, plant("lemon", "meyer", { bedId: "h1" }));
     expect(out.state.plants).toHaveLength(0);
     expect(out.toast).toContain("育てられません");
@@ -105,7 +105,7 @@ describe("状態遷移", () => {
   });
 
   it("場所の自動命名は種類ごとにA,B,C", () => {
-    const s = run(initialState(), { type: "addBed", id: "p2", soil: "planter" }, { type: "addBed", id: "f1", soil: "field" });
+    const s = run(initialState(), { type: "addBed", id: "p2", soil: "planter", today: T }, { type: "addBed", id: "f1", soil: "field", today: T });
     expect(s.beds.map((b) => b.name)).toEqual(["プランターA", "プランターB", "畑A"]);
   });
 

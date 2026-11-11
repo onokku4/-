@@ -1,6 +1,7 @@
 import { Check, ChevronRight, Plus } from "lucide-react";
 import type { Bed, SoilTypeId } from "../../types";
 import { SOIL_TYPES, soilType } from "../../data/catalog";
+import { SOIL_MIXES, findSoilMix } from "../../data/soils";
 import { soilHealth } from "../../lib/soil";
 import { styles } from "../../styles";
 
@@ -8,13 +9,17 @@ interface Props {
   beds: Bed[];
   bedId: string | null;
   newType: SoilTypeId;
+  newMix: string;
   onPick: (id: string) => void;
   onPickType: (t: SoilTypeId) => void;
+  onPickMix: (id: string) => void;
   onAddBed: (t: SoilTypeId) => void;
   onNext: () => void;
 }
 
-export function StepBed({ beds, bedId, newType, onPick, onPickType, onAddBed, onNext }: Props) {
+export function StepBed({ beds, bedId, newType, newMix, onPick, onPickType, onPickMix, onAddBed, onNext }: Props) {
+  const mixes = SOIL_MIXES.filter((m) => !m.fieldOnly || newType === "field");
+  const mix = findSoilMix(newMix);
   return (
     <div>
       <div style={styles.stepHint}>育てる場所（土）を選びます</div>
@@ -44,6 +49,7 @@ export function StepBed({ beds, bedId, newType, onPick, onPickType, onAddBed, on
                 <span style={{ ...styles.bedPickHealth, display: "block" }}>
                   {st.label}
                   {st.hasNutrient ? ` ・ ${h.label}・連用${b.uses}回` : " ・ 培養液栽培"}
+                  {findSoilMix(b.soilMix) && ` ・ ${findSoilMix(b.soilMix)?.name.replace(/（.*）/, "")}`}
                 </span>
               </span>
               {active && <Check size={18} color="#6b9d4f" aria-hidden="true" />}
@@ -75,6 +81,19 @@ export function StepBed({ beds, bedId, newType, onPick, onPickType, onAddBed, on
           ))}
         </div>
         <p style={styles.soilTypeDesc}>{soilType(newType).desc}</p>
+        {newType !== "hydro" && (
+          <label style={styles.mixField}>
+            <span style={styles.mixLabel}>使う土（市販の培養土など）</span>
+            <select style={styles.mixSelect} value={newMix} onChange={(e) => onPickMix(e.target.value)}>
+              {mixes.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+            {mix && <span style={styles.soilTypeDesc}>{mix.desc}</span>}
+          </label>
+        )}
         <button style={styles.addBedConfirm} onClick={() => onAddBed(newType)}>
           <Plus size={15} aria-hidden="true" /> この種類の場所を追加
         </button>
