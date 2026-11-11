@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Cloud, CloudRain, Minus, Plus, Snowflake, Sun, Wind, type LucideIcon } from "lucide-react";
 import type { Condition, GardenState } from "../types";
 import type { Action } from "../lib/garden";
+import { localDate } from "../lib/date";
 import { CONDITIONS, conditionInfo, isAdjusted, tempLabel } from "../lib/weather";
 import { formatClock } from "../ui/format";
 import { styles } from "../styles";
@@ -28,7 +29,7 @@ export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch
   const [draft, setDraft] = useState<string | null>(null);
   const setTemp = (tempC: number) => {
     setDraft(null);
-    dispatch({ type: "weatherAdjust", patch: { tempC } });
+    dispatch({ type: "weatherAdjust", patch: { tempC }, today: localDate() });
   };
 
   return (
@@ -49,7 +50,7 @@ export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch
               aria-label={w.label}
               aria-pressed={active}
               title={w.label}
-              onClick={() => dispatch({ type: "weatherAdjust", patch: { condition: w.id } })}
+              onClick={() => dispatch({ type: "weatherAdjust", patch: { condition: w.id }, today: localDate() })}
               style={{
                 ...styles.weatherBtn,
                 background: active ? w.color : "transparent",
@@ -75,7 +76,7 @@ export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch
           onChange={(e) => {
             setDraft(e.target.value);
             const n = e.target.valueAsNumber;
-            if (Number.isFinite(n)) dispatch({ type: "weatherAdjust", patch: { tempC: n } });
+            if (Number.isFinite(n)) dispatch({ type: "weatherAdjust", patch: { tempC: n }, today: localDate() });
           }}
           onBlur={() => setDraft(null)}
         />
@@ -115,7 +116,7 @@ export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch
           {isAdjusted(weather) && (
             <>
               <span style={styles.adjustedChip}>調整済み</span>
-              <button style={styles.resetBtn} onClick={() => dispatch({ type: "weatherReset" })}>
+              <button style={styles.resetBtn} onClick={() => dispatch({ type: "weatherReset", today: localDate() })}>
                 自動値に戻す
               </button>
             </>

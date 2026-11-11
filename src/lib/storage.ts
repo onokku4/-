@@ -1,4 +1,4 @@
-import type { BadgeId, Bed, Condition, GardenState, HarvestRecord, Plant, SoilTypeId, WeatherState } from "../types";
+import type { BadgeId, Bed, CareEvent, CareKind, Condition, GardenState, HarvestRecord, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
 import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
@@ -92,6 +92,29 @@ const toWeather = (v: unknown): WeatherState => {
 
 const defined = <T>(v: T | undefined): v is T => v !== undefined;
 
+const isDate = (v: unknown): v is string => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+const CARE_KINDS: readonly CareKind[] = ["water", "feed", "refresh"];
+const isCareKind = (v: unknown): v is CareKind => CARE_KINDS.includes(v as CareKind);
+
+const toWeatherLog = (v: unknown): WeatherLog => {
+  if (!isObj(v)) return {};
+  const out: WeatherLog = {};
+  for (const [date, d] of Object.entries(v)) {
+    if (!isDate(date) || !isObj(d) || !isCondition(d.condition)) continue;
+    out[date] = {
+      condition: d.condition,
+      maxC: clampTemp(num(d.maxC, 20)),
+      minC: clampTemp(num(d.minC, 20)),
+      rainMm: Math.max(0, num(d.rainMm)),
+      source: d.source === "manual" ? "manual" : "auto",
+    };
+  }
+  return out;
+};
+
+const toCare = (r: Raw): CareEvent | undefined =>
+  isDate(r.date) && isCareKind(r.kind) ? { date: r.date, kind: r.kind, label: str(r.label) } : undefined;
+
 /** 保存データ（旧形式・壊れた値を含む）を現在の GardenState に正規化する */
 export function normalize(raw: unknown): GardenState {
   const base = initialState();
@@ -109,6 +132,8 @@ export function normalize(raw: unknown): GardenState {
     waterCount: Math.max(0, num(raw.waterCount)),
     earnedBadges: Array.isArray(raw.earnedBadges) ? [...new Set(raw.earnedBadges.filter(isBadge))] : [],
     weather: toWeather(raw.weather),
+    weatherLog: toWeatherLog(raw.weatherLog),
+    careLog: list(raw.careLog).map(toCare).filter(defined),
     autoWeather: raw.autoWeather === true,
     notifyOn: raw.notifyOn === true,
     notifyTime: /^\d{2}:\d{2}$/.test(str(raw.notifyTime)) ? str(raw.notifyTime) : base.notifyTime,

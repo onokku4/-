@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { History, Plus, Sprout } from "lucide-react";
+import { CalendarDays, History, Plus, Sprout } from "lucide-react";
 import { BADGES } from "./data/game";
 import { diagnose } from "./lib/pollination";
 import { feedSchedule } from "./lib/soil";
@@ -13,6 +13,7 @@ import { styles } from "./styles";
 import { AddWizard } from "./components/AddWizard";
 import { BadgeGrid } from "./components/BadgeGrid";
 import { BadgePopup } from "./components/BadgePopup";
+import { CalendarModal } from "./components/CalendarModal";
 import { BedSection } from "./components/BedSection";
 import { FeedAlert } from "./components/FeedAlert";
 import { Header } from "./components/Header";
@@ -30,6 +31,7 @@ export function App() {
   const today = useToday();
   const [showAdd, setShowAdd] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [feedTarget, setFeedTarget] = useState<string | null>(null);
   const { fetching, fetchNow } = useAutoWeather(state, dispatch, say);
 
@@ -38,7 +40,7 @@ export function App() {
     () =>
       state.plants.flatMap((plant) => {
         const bed = state.beds.find((b) => b.id === plant.bedId);
-        const status = plantStatus(plant, bed, state.weather.current, today);
+        const status = plantStatus(plant, bed, state.weather.current, today, state.weatherLog);
         if (!status) return [];
         const diagnosis = diagnose(
           plant,
@@ -46,7 +48,7 @@ export function App() {
         );
         return [{ plant, bed, status, diagnosis }];
       }),
-    [state.plants, state.beds, state.weather.current, today],
+    [state.plants, state.beds, state.weather.current, state.weatherLog, today],
   );
   const due = useMemo(() => views.filter((v) => v.status.due), [views]);
   const dueNames = useMemo(() => due.map((v) => v.plant.projectName), [due]);
@@ -91,6 +93,9 @@ export function App() {
               <Sprout size={20} color="#6b9d4f" aria-hidden="true" /> 育てている作物
             </h2>
             <div style={styles.btnRow}>
+              <button style={styles.histBtn} onClick={() => setShowCalendar(true)}>
+                <CalendarDays size={16} aria-hidden="true" /> カレンダー
+              </button>
               <button style={styles.histBtn} onClick={() => setShowHistory(true)}>
                 <History size={16} aria-hidden="true" /> 履歴{state.harvestLog.length > 0 ? `(${state.harvestLog.length})` : ""}
               </button>
@@ -128,6 +133,7 @@ export function App() {
         <AddWizard beds={state.beds} plants={state.plants} today={today} dispatch={dispatch} onClose={() => setShowAdd(false)} />
       )}
       {showHistory && <HistoryModal log={state.harvestLog} onClose={() => setShowHistory(false)} />}
+      {showCalendar && <CalendarModal state={state} today={today} onClose={() => setShowCalendar(false)} />}
       <Toast message={toast} />
       {popupBadge && <BadgePopup badge={popupBadge} onClose={dismissBadge} />}
     </div>

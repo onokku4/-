@@ -1,4 +1,4 @@
-import type { Condition, WeatherReading, WeatherState } from "../types";
+import type { Condition, DailyWeather, WeatherLog, WeatherReading, WeatherState } from "../types";
 
 export const CONDITIONS: readonly { id: Condition; label: string; mult: number; color: string }[] = [
   { id: "sunny", label: "晴れ", mult: 1.0, color: "#e0a32e" },
@@ -9,6 +9,71 @@ export const CONDITIONS: readonly { id: Condition; label: string; mult: number; 
 ];
 
 export const conditionInfo = (id: Condition) => CONDITIONS.find((c) => c.id === id) ?? CONDITIONS[0]!;
+
+export const CONDITION_EMOJI: Record<Condition, string> = { sunny: "☀️", cloudy: "☁️", rainy: "🌧️", snowy: "❄️", windy: "💨" };
+
+/** 取得する過去日数と予報日数（Open-Meteo の上限） */
+export const PAST_DAYS = 92;
+export const FORECAST_DAYS = 16;
+
+/** 1日の降水量がこれ以上なら水やり1回ぶんとみなす（mm）。鉢は軒下などで当たりにくいので多めに */
+export const RAIN_AS_WATER_MM = { field: 5, planter: 10 } as const;
+
+/** 手動で「雨」にしたときの降水量の目安（mm） */
+const MANUAL_RAIN_MM = 10;
+
+/** 手動入力の天気を1日の記録にする。気温は最高・最低とも入力値 */
+export const manualDaily = (r: WeatherReading): DailyWeather => ({
+  condition: r.condition,
+  maxC: r.tempC,
+  minC: r.tempC,
+  rainMm: r.condition === "rainy" || r.condition === "snowy" ? MANUAL_RAIN_MM : 0,
+  source: "manual",
+});
+
+/**
+ * 自動取得の日別天気を記録に取り込む。
+ * 人が手で直した日（manual）は自動値で上書きしない。
+ */
+export const mergeLog = (log: WeatherLog, daily: WeatherLog): WeatherLog => {
+  const out = { ...log };
+  for (const [date, d] of Object.entries(daily)) {
+    if (out[date]?.source === "manual") continue;
+    out[date] = d;
+  }
+  return out;
+};
+
+/** 日別天気の代表値（水やり計算に使う）。日中の最高気温と天気区分 */
+export const readingOf = (d: DailyWeather): WeatherReading => ({ condition: d.condition, tempC: clampTemp(d.maxC) });
+
+const numAt = (arr: unknown, i: number): number | undefined => {
+  const v = Array.isArray(arr) ? arr[i] : undefined;
+  return typeof v === "number" && Number.isFinite(v) ? v : undefined;
+};
+
+/** Open-Meteo の daily 応答を日付→天気に変換する。値が欠けている日は飛ばす */
+export const parseDaily = (json: unknown): WeatherLog => {
+  const daily = (json as { daily?: Record<string, unknown> } | null)?.daily;
+  const times = daily?.time;
+  if (!daily || !Array.isArray(times)) return {};
+  const out: WeatherLog = {};
+  times.forEach((t, i) => {
+    if (typeof t !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(t)) return;
+    const code = numAt(daily.weather_code, i);
+    const max = numAt(daily.temperature_2m_max, i);
+    const min = numAt(daily.temperature_2m_min, i);
+    if (code === undefined || max === undefined || min === undefined) return;
+    out[t] = {
+      condition: conditionFromWmo(code, numAt(daily.wind_speed_10m_max, i) ?? 0),
+      maxC: Math.round(max),
+      minC: Math.round(min),
+      rainMm: Math.round((numAt(daily.precipitation_sum, i) ?? 0) * 10) / 10,
+      source: "auto",
+    };
+  });
+  return out;
+};
 
 export const TEMP_MIN = -20;
 export const TEMP_MAX = 45;
@@ -68,7 +133,7 @@ export const conditionFromWmo = (code: number, windMs: number): Condition => {
 export type FetchWeatherError = "unsupported" | "denied" | "position" | "network";
 
 export type FetchWeatherResult =
-  | { ok: true; reading: WeatherReading }
+  | { ok: true; reading: WeatherReading; daily: WeatherLog }
   | { ok: false; error: FetchWeatherError };
 
 const getPosition = (): Promise<GeolocationPosition> =>
@@ -100,11 +165,16 @@ export async function fetchWeatherHere(): Promise<FetchWeatherResult> {
       latitude: pos.coords.latitude.toFixed(2),
       longitude: pos.coords.longitude.toFixed(2),
       current: "temperature_2m,weather_code,wind_speed_10m",
+      daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+      past_days: String(PAST_DAYS),
+      forecast_days: String(FORECAST_DAYS),
+      timezone: "auto",
       wind_speed_unit: "ms",
     });
     const res = await fetch(`https://api.open-meteo.com/v1/forecast?${q}`);
     if (!res.ok) return { ok: false, error: "network" };
-    const cur = ((await res.json()) as { current?: Record<string, unknown> }).current;
+    const json: unknown = await res.json();
+    const cur = (json as { current?: Record<string, unknown> }).current;
     const temp = cur?.temperature_2m;
     const code = cur?.weather_code;
     const wind = cur?.wind_speed_10m;
@@ -115,6 +185,7 @@ export async function fetchWeatherHere(): Promise<FetchWeatherResult> {
         condition: conditionFromWmo(code, typeof wind === "number" ? wind : 0),
         tempC: clampTemp(temp),
       },
+      daily: parseDaily(json),
     };
   } catch {
     return { ok: false, error: "network" };

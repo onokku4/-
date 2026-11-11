@@ -24,8 +24,8 @@ export function useAutoWeather(
     busy.current = false;
     setFetching(false);
     if (result.ok) {
-      const { reading } = result;
-      dispatch({ type: "weatherAuto", reading, fetchedAt: new Date().toISOString() });
+      const { reading, daily } = result;
+      dispatch({ type: "weatherAuto", reading, fetchedAt: new Date().toISOString(), daily });
       say(`📍 天気を自動入力：${conditionInfo(reading.condition).label} ${reading.tempC}℃（実際と違えば調整できます）`);
     } else {
       say(FETCH_ERROR_MESSAGE[result.error]);

@@ -391,6 +391,26 @@ export const styles = {
     display: "flex", alignItems: "center", justifyContent: "center", gap: 3,
   },
   footer: { textAlign: "center", marginTop: 34, fontSize: 12, color: "#a8ac98" },
+  /* calendar */
+  calHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  calNav: { background: "#fff", border: "1.5px solid #e3ddcf", borderRadius: 10, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#3d4a35" },
+  calMonth: { fontFamily: "var(--display)", fontSize: 20, color: "#3a5630" },
+  calNote: { fontSize: 11, color: "#9aa089", lineHeight: 1.5, marginBottom: 10 },
+  calGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 },
+  calWeekday: { textAlign: "center", fontSize: 10.5, fontWeight: 700, padding: "2px 0" },
+  calCell: {
+    border: "1.5px solid", borderRadius: 8, padding: "4px 2px 3px", cursor: "pointer", minHeight: 58,
+    display: "flex", flexDirection: "column", alignItems: "center", gap: 1, fontFamily: "var(--body)",
+  },
+  calDay: { fontSize: 12, fontWeight: 700, lineHeight: 1 },
+  calWx: { fontSize: 13, lineHeight: 1.1 },
+  calTemp: { fontSize: 9.5, color: "#7a6a45", lineHeight: 1 },
+  calMarks: { fontSize: 9, lineHeight: 1.1, letterSpacing: -1, minHeight: 10 },
+  calDetail: { marginTop: 12, background: "#fff", borderRadius: 12, padding: "11px 14px", border: "1.5px solid #e8e1d0", display: "flex", flexDirection: "column", gap: 6 },
+  calDetailHead: { fontFamily: "var(--display)", fontSize: 15, color: "#3d4a35", display: "flex", alignItems: "center", gap: 8 },
+  calDetailRow: { fontSize: 12, color: "#5a6b4d", display: "flex", alignItems: "center", gap: 6, lineHeight: 1.5, flexWrap: "wrap" },
+  calForecastTag: { fontSize: 10, background: "#eef4e6", color: "#4f7d3a", padding: "1px 7px", borderRadius: 6, fontWeight: 700 },
+  calManualTag: { fontSize: 10, background: "#f0ece0", color: "#8a6a3a", padding: "1px 7px", borderRadius: 6, fontWeight: 700, marginLeft: 6 },
   /* modal */
   modalOverlay: {
     position: "fixed", inset: 0, background: "rgba(45,55,38,.55)", backdropFilter: "blur(3px)",

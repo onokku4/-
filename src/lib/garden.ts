@@ -1,10 +1,10 @@
-import type { BadgeId, Bed, GardenState, Plant, SoilTypeId, WeatherReading } from "../types";
+import type { BadgeId, Bed, CareEvent, GardenState, Plant, SoilTypeId, WeatherLog, WeatherReading } from "../types";
 import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilType, varietyOf } from "../data/catalog";
 import { GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
 import { diagnose } from "./pollination";
 import { afterHarvest, fed, newBed, refreshed } from "./soil";
-import { DEFAULT_WEATHER, adjust, applyAuto, resetToAuto } from "./weather";
+import { DEFAULT_WEATHER, adjust, applyAuto, manualDaily, mergeLog, resetToAuto } from "./weather";
 
 /** 状態遷移はすべてここを通す。純粋関数なので日付とIDは呼び出し側が渡す */
 export type Action =
@@ -15,9 +15,9 @@ export type Action =
   | { type: "addBed"; id: string; soil: SoilTypeId; name?: string; soilMix?: string; today: string }
   | { type: "refreshBed"; bedId: string; today: string; soilMix?: string }
   | { type: "feedBed"; bedId: string; fertilizer: string; today: string }
-  | { type: "weatherAuto"; reading: WeatherReading; fetchedAt: string }
-  | { type: "weatherAdjust"; patch: Partial<WeatherReading> }
-  | { type: "weatherReset" }
+  | { type: "weatherAuto"; reading: WeatherReading; fetchedAt: string; daily?: WeatherLog }
+  | { type: "weatherAdjust"; patch: Partial<WeatherReading>; today: string }
+  | { type: "weatherReset"; today: string }
   | { type: "setAutoWeather"; on: boolean }
   | { type: "setNotify"; on: boolean }
   | { type: "setNotifyTime"; time: string }
@@ -39,6 +39,8 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
   waterCount: 0,
   earnedBadges: [],
   weather: DEFAULT_WEATHER,
+  weatherLog: {},
+  careLog: [],
   autoWeather: false,
   notifyOn: false,
   notifyTime: "07:00",
@@ -46,6 +48,16 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
 });
 
 const quiet = (state: GardenState): Outcome => ({ state, newBadges: [] });
+
+/** 世話の記録を足す（カレンダー用）。同じ日・同じ種類・同じ対象は1件にまとめる */
+const logged = (s: GardenState, ev: CareEvent): GardenState =>
+  s.careLog.some((e) => e.date === ev.date && e.kind === ev.kind && e.label === ev.label) ? s : { ...s, careLog: [...s.careLog, ev] };
+
+/** 自動取得した「今日」の記録がなければ、手動の値を今日の天気として記録する */
+const logManual = (s: GardenState, today: string): GardenState => ({
+  ...s,
+  weatherLog: { ...s.weatherLog, [today]: manualDaily(s.weather.current) },
+});
 
 /** 世話をした日の記録。XP加算と連続日数の更新 */
 const cared = (s: GardenState, xp: number, today: string): GardenState => {
@@ -114,8 +126,9 @@ export function apply(s: GardenState, a: Action): Outcome {
 
     case "water": {
       if (!s.plants.some((p) => p.uid === a.uid)) return quiet(s);
+      const plant = s.plants.find((p) => p.uid === a.uid)!;
       const plants = s.plants.map((p) => (p.uid === a.uid ? { ...p, lastWater: a.today } : p));
-      const next = cared({ ...s, plants, waterCount: s.waterCount + 1 }, XP.water, a.today);
+      const next = cared(logged({ ...s, plants, waterCount: s.waterCount + 1 }, { date: a.today, kind: "water", label: plant.projectName }), XP.water, a.today);
       return { ...award(s, next), toast: `💧 水やり完了！ +${XP.water}XP` };
     }
 
@@ -167,7 +180,8 @@ export function apply(s: GardenState, a: Action): Outcome {
       if (!bed) return quiet(s);
       const beds = s.beds.map((b) => (b.id === a.bedId ? refreshed(b, a.today, a.soilMix) : b));
       const what = bed.type === "hydro" ? "培養液を交換しました" : a.soilMix ? "土を記録しました" : "土をリフレッシュしました";
-      return { ...award(s, cared({ ...s, beds }, XP.refresh, a.today)), toast: `♻️ ${what}！ +${XP.refresh}XP` };
+      const next = logged({ ...s, beds }, { date: a.today, kind: "refresh", label: bed.name });
+      return { ...award(s, cared(next, XP.refresh, a.today)), toast: `♻️ ${what}！ +${XP.refresh}XP` };
     }
 
     case "feedBed": {
@@ -177,15 +191,22 @@ export function apply(s: GardenState, a: Action): Outcome {
       const next = fed(bed, a.fertilizer, growing, a.today);
       if (!next) return quiet(s);
       const beds = s.beds.map((b) => (b.id === a.bedId ? next : b));
-      return { ...award(s, cared({ ...s, beds }, XP.feed, a.today)), toast: `🌱 「${bed.name}」に追肥しました！ +${XP.feed}XP` };
+      const after = logged({ ...s, beds }, { date: a.today, kind: "feed", label: bed.name });
+      return { ...award(s, cared(after, XP.feed, a.today)), toast: `🌱 「${bed.name}」に追肥しました！ +${XP.feed}XP` };
     }
 
     case "weatherAuto":
-      return quiet({ ...s, weather: applyAuto(a.reading, a.fetchedAt) });
+      return quiet({ ...s, weather: applyAuto(a.reading, a.fetchedAt), weatherLog: mergeLog(s.weatherLog, a.daily ?? {}) });
     case "weatherAdjust":
-      return quiet({ ...s, weather: adjust(s.weather, a.patch) });
-    case "weatherReset":
-      return quiet({ ...s, weather: resetToAuto(s.weather) });
+      return quiet(logManual({ ...s, weather: adjust(s.weather, a.patch) }, a.today));
+    case "weatherReset": {
+      // 自動値に戻すので、今日の手動記録も自動値に戻す
+      const weather = resetToAuto(s.weather);
+      const auto = weather.auto;
+      const log = { ...s.weatherLog };
+      if (auto) log[a.today] = { ...manualDaily({ condition: auto.condition, tempC: auto.tempC }), source: "auto" };
+      return quiet({ ...s, weather, weatherLog: log });
+    }
     case "setAutoWeather":
       return quiet({ ...s, autoWeather: a.on });
     case "setNotify":

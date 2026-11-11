@@ -16,7 +16,7 @@ interface Props {
 
 export function PlantCard({ view, dispatch }: Props) {
   const { plant, bed, status, diagnosis } = view;
-  const { crop, variety, due, urgent, interval, daysSinceWater, growthPct } = status;
+  const { crop, variety, due, urgent, interval, daysSinceWater, growthPct, byRain } = status;
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const soil = bed ? soilType(bed.type) : undefined;
   const perennial = crop.perennial === true;
@@ -99,7 +99,7 @@ export function PlantCard({ view, dispatch }: Props) {
           ? urgent
             ? `${daysSinceWater}日 水やりなし — 急いで！`
             : "そろそろ水やりを"
-          : `あと約${interval - daysSinceWater}日でOK`}
+          : `あと約${interval - daysSinceWater}日でOK${byRain ? "（雨で水やり済み扱い）" : ""}`}
       </div>
 
       <div style={styles.cardActions}>

@@ -107,6 +107,29 @@ export interface WeatherReading {
   tempC: number;
 }
 
+/** 1日ぶんの天気の記録。auto は Open-Meteo、manual は人が入力した値 */
+export interface DailyWeather {
+  condition: Condition;
+  maxC: number;
+  minC: number;
+  /** 降水量（mm）。手動入力では不明なので 0 か目安 */
+  rainMm: number;
+  source: "auto" | "manual";
+}
+
+/** 日付 → 天気。キーは YYYY-MM-DD（ローカル） */
+export type WeatherLog = Record<string, DailyWeather>;
+
+export type CareKind = "water" | "feed" | "refresh";
+
+/** 世話の記録（カレンダー表示用）。収穫は harvestLog、植え付けは Plant.plantedDate にある */
+export interface CareEvent {
+  date: string;
+  kind: CareKind;
+  /** 株名や場所名 */
+  label: string;
+}
+
 export interface WeatherState {
   /** 水やり計算に使う値。自動取得後に人が調整できる */
   current: WeatherReading;
@@ -134,6 +157,8 @@ export interface GardenState {
   waterCount: number;
   earnedBadges: BadgeId[];
   weather: WeatherState;
+  weatherLog: WeatherLog;
+  careLog: CareEvent[];
   autoWeather: boolean;
   notifyOn: boolean;
   notifyTime: string; // HH:MM
