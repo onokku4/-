@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Droplets, Pencil, Star, Sun, Thermometer, Trash2, X } from "lucide-react";
+import { BookOpen, Check, Droplets, Pencil, Star, Sun, Thermometer, Trash2, X } from "lucide-react";
 import type { Bed } from "../types";
 import type { Action } from "../lib/garden";
 import { localDate } from "../lib/date";
@@ -7,6 +7,7 @@ import { canGrowIn, soilType } from "../data/catalog";
 import { formatMonths } from "../ui/format";
 import { newId } from "../ui/id";
 import { styles } from "../styles";
+import { GuideModal } from "./GuideModal";
 import { PollinationBadge } from "./PollinationBadge";
 import type { PlantView } from "./plantView";
 
@@ -22,6 +23,7 @@ export function PlantCard({ view, beds, dispatch }: Props) {
   const { crop, variety, due, urgent, interval, daysSinceWater, growthPct, byRain, temp } = status;
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [guide, setGuide] = useState(false);
   const [draft, setDraft] = useState({ name: plant.projectName, date: plant.plantedDate, bedId: plant.bedId });
   const startEdit = () => {
     setDraft({ name: plant.projectName, date: plant.plantedDate, bedId: plant.bedId });
@@ -57,6 +59,9 @@ export function PlantCard({ view, beds, dispatch }: Props) {
             )}
           </div>
         </div>
+        <button style={styles.editBtn} aria-label={`${crop.name}の育て方`} title="育て方・道具・病害虫" onClick={() => setGuide(true)}>
+          <BookOpen size={14} aria-hidden="true" />
+        </button>
         <button style={styles.editBtn} aria-label={`${plant.projectName}を編集`} title="名前・植え付け日・場所を編集" onClick={startEdit}>
           <Pencil size={14} aria-hidden="true" />
         </button>
@@ -186,6 +191,7 @@ export function PlantCard({ view, beds, dispatch }: Props) {
         </button>
       </div>
 
+      {guide && <GuideModal crop={crop} onClose={() => setGuide(false)} />}
       <div style={styles.tip}>
         <Star size={13} color="var(--amber)" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
         <span>

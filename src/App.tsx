@@ -3,6 +3,7 @@ import { Plus } from "lucide-react";
 import { BADGES } from "./data/game";
 import { diagnose } from "./lib/pollination";
 import { feedSchedule } from "./lib/soil";
+import { frostTomorrow, recommendSupplies } from "./lib/supplies";
 import { plantStatus } from "./lib/watering";
 import { conditionInfo } from "./lib/weather";
 import { useAutoWeather } from "./hooks/useAutoWeather";
@@ -22,6 +23,7 @@ import type { PlantView } from "./components/plantView";
 import { PollinationAlert } from "./components/PollinationAlert";
 import { SettingsView } from "./components/SettingsView";
 import { StatusBar } from "./components/StatusBar";
+import { SuppliesCard } from "./components/SuppliesCard";
 import { TempAlert } from "./components/TempAlert";
 import { TabBar, type Tab } from "./components/TabBar";
 import { Toast } from "./components/Toast";
@@ -66,6 +68,8 @@ export function App() {
   const popupBadge = BADGES.find((b) => b.id === badgeQueue[0]);
   const sortedPhotos = useMemo(() => [...state.photos].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)), [state.photos]);
   const todo = due.length + feedDue.length;
+  const supplies = useMemo(() => recommendSupplies(state, today), [state, today]);
+  const frost = frostTomorrow(state.weatherLog, today);
   // ホームは「手を入れる株」だけ。全部は「場所」タブの作物タブで見る
   const attention = useMemo(
     () => views.filter((v) => v.status.due || v.status.frostRisk || v.status.temp.kind !== "ok" || v.diagnosis?.verdict === "ng" || v.diagnosis?.verdict === "action"),
@@ -100,9 +104,16 @@ export function App() {
             <StatusBar xp={state.xp} streak={state.streak} waterCount={state.waterCount} plantCount={state.plants.length} />
             <WaterAlert due={due} weatherLabel={conditionInfo(state.weather.current.condition).label} dispatch={dispatch} />
             <FeedAlert due={feedDue} onPick={goFeed} />
+            {frost !== null && state.plants.length > 0 && (
+              <section style={{ ...styles.alertBox, borderColor: "rgba(91,138,166,.5)", borderLeftColor: "var(--sky)" }} aria-label="霜注意">
+                <div style={{ ...styles.alertHead, marginBottom: 4 }}>❄️ 明日の朝は {frost}℃の予報。霜に注意</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>寒さに弱い株は軒下・室内へ。不織布をかけるだけでも2〜3℃違います。</div>
+              </section>
+            )}
             <TempAlert views={views} tempC={state.weather.current.tempC} />
             <PollinationAlert views={views} />
-            {todo === 0 && state.plants.length > 0 && <div style={{ ...styles.alertBox, borderColor: "rgba(61,220,151,.4)", borderLeftColor: "var(--mint)" }}>✅ 今日やることはありません。</div>}
+            {todo === 0 && state.plants.length > 0 && <div style={{ ...styles.alertBox, borderColor: "rgba(107,157,79,.4)", borderLeftColor: "var(--mint)" }}>✅ 今日やることはありません。</div>}
+            <SuppliesCard items={supplies} />
 
             <div style={{ ...styles.sectionHead, marginTop: 20 }}>
               <h2 style={styles.sectionTitle}>{views.length === 0 ? "育てている作物" : "手を入れる株"}</h2>

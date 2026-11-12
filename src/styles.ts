@@ -70,6 +70,10 @@ export const styles = {
   },
   editBox: { background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 10 },
   tempChip: { display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 7, padding: "2px 8px", fontSize: 11, fontWeight: 700 },
+  guideList: { margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.7, color: "var(--text)", display: "flex", flexDirection: "column", gap: 4 },
+  guideText: { fontSize: 12.5, lineHeight: 1.7, color: "var(--text)" },
+  gearRow: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, lineHeight: 1.5, color: "var(--text)" },
+  gearWhy: { display: "block", fontSize: 11, color: "var(--muted)" },
   /* list row（場所一覧） */
   bedRow: {
     boxShadow: "0 6px 18px rgba(120,110,80,.08)",

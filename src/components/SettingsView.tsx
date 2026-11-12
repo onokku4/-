@@ -1,5 +1,8 @@
 import { useState } from "react";
-import { History } from "lucide-react";
+import { BookOpen, History } from "lucide-react";
+import type { Crop } from "../types";
+import { CATEGORIES, CROPS } from "../data/catalog";
+import { GuideModal } from "./GuideModal";
 import type { GardenState } from "../types";
 import type { Action } from "../lib/garden";
 import { styles } from "../styles";
@@ -21,6 +24,7 @@ interface Props {
 
 export function SettingsView({ state, today, fetching, onFetch, onRegister, dispatch, say }: Props) {
   const [showHistory, setShowHistory] = useState(false);
+  const [guide, setGuide] = useState<Crop | null>(null);
   return (
     <section aria-label="設定" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div>
@@ -43,6 +47,26 @@ export function SettingsView({ state, today, fetching, onFetch, onRegister, disp
           </span>
           <span style={{ fontFamily: "var(--mono)", color: "var(--muted)", fontSize: 12 }}>{state.harvestLog.length}件</span>
         </button>
+      </div>
+      <div>
+        <div style={styles.eyebrow}>
+          <BookOpen size={12} aria-hidden="true" /> 作物図鑑・育て方
+        </div>
+        {CATEGORIES.map((cat) => (
+          <div key={cat} style={{ marginBottom: 8 }}>
+            <div style={{ fontSize: 11.5, fontWeight: 700, color: "var(--muted)", margin: "6px 0 4px" }}>{cat}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {CROPS.filter((c) => c.category === cat).map((c) => (
+                <button key={c.id} style={styles.histBtn} onClick={() => setGuide(c)}>
+                  {c.emoji} {c.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {guide && <GuideModal crop={guide} onClose={() => setGuide(null)} />}
+      </div>
+      <div>
         <BadgeGrid earned={state.earnedBadges} />
       </div>
       <footer style={styles.footer}>🌾 データはこのブラウザに自動保存されます。</footer>

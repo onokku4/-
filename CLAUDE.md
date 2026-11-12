@@ -27,6 +27,7 @@ src/data/               作物カタログ（データのみ、ロジックな�
   game.ts               レベル・バッジ・XP
   soils.ts              市販の培養土カタログ（初期栄養・元肥の持続日数・酸性）
   fertilizers.ts        追肥の種類（戻る栄養・持続日数）
+  guides.ts             育て方ヘルプ（カテゴリ共通の手順・道具・資材 ＋ 作物ごとのポイント・病害虫・収穫）
 src/lib/                純粋関数。React にも現在時刻にも依存しない
   garden.ts             apply(state, action) — 状態遷移はすべてここ
   pollination.ts        diagnose(target, others) — 受粉相性診断
@@ -38,6 +39,7 @@ src/lib/                純粋関数。React にも現在時刻にも依存し�
   photos.ts             成長記録（植え付けから何日目）の計算と並べ替え
   backup.ts             バックアップ形式（封筒・検証・ファイル名）
   temperature.ts        作物ごとの適温と、今日／過去の日の暑すぎ・寒すぎ判定
+  supplies.ts           今そろえる・補充する物の提案（成長段階・肥料残量・霜予報から）、霜注意
   date.ts               ローカル日付
 src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バッジ）
 src/ui/photoStore.ts    写真本体の IndexedDB 保存と端末内縮小（長辺1280px JPEG）
@@ -49,6 +51,8 @@ src/components/         表示のみ。計算は lib を呼ぶ
   PhotoViewer           全画面・横スワイプ（scroll-snap）でページ送り
   SettingsView          天気の位置・通知・バックアップ・履歴・バッジ
   DayModal              カレンダーの日を押したときの「その日のデータ」（株ごとの何日目・気温・水やり・写真）
+  GuideModal            作物の育て方ヘルプ（育て方／道具と資材／病害虫）。株カードの📖と設定の作物図鑑から
+  SuppliesCard          ホームの「そろえる物・補充」
   WeatherPanel          iPhone のウィジェット風の天気（大きな気温・天気ごとの空色）と調整・位置登録
 tests/                  lib の単体テスト + 画面の統合テスト
 legacy/garden.jsx       移行前の単一ファイル版（参照用。編集しない）
@@ -78,7 +82,7 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 
 ## 作物を足すとき
 
-`src/data/*.ts` に `Crop` を追加するだけ。`tests/catalog.test.ts` が以下を検証する。
+`src/data/*.ts` に `Crop` を追加し、`guides.ts` の `CROP_GUIDES` に育て方を足す（`tests/supplies.test.ts` が全作物にガイドがあることを確認する）。`tests/catalog.test.ts` が以下を検証する。
 
 - ID の重複がない
 - 相手が必要な品種（`cross` / `dioecious` / `selfHelped`）には、カタログ内に受粉相手がいる
