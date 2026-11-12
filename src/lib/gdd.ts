@@ -51,13 +51,14 @@ export const gddEstimate = (plant: Plant, variety: Variety, log: WeatherLog, tod
   let future = acc;
   let date = today;
   let guard = 0;
-  while (future < target && guard < 400) {
+  const LIMIT = 365;
+  while (future < target && guard < LIMIT) {
     const w = log[date];
     future += w ? Math.max(0, (w.maxC + w.minC) / 2 - BASE_C) : Math.max(0.5, rate);
     date = addDays(date, 1);
     guard++;
   }
-  const stalled = future < target;
+  const stalled = future < target || guard >= LIMIT;
   const plain = addDays(plant.plantedDate, variety.days);
   const expectedDate = stalled ? plain : date;
   return {
