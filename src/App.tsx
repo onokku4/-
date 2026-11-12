@@ -13,6 +13,7 @@ import { styles } from "./styles";
 import { AddWizard } from "./components/AddWizard";
 import { BadgeGrid } from "./components/BadgeGrid";
 import { AlbumModal } from "./components/AlbumModal";
+import { BackupCard } from "./components/BackupCard";
 import { BadgePopup } from "./components/BadgePopup";
 import { CalendarModal } from "./components/CalendarModal";
 import { BedSection } from "./components/BedSection";
@@ -81,6 +82,7 @@ export function App() {
         <FeedAlert due={feedDue} onPick={setFeedTarget} />
         <PollinationAlert views={views} />
         <NotifyCard notifyOn={state.notifyOn} notifyTime={state.notifyTime} dispatch={dispatch} say={say} />
+        <BackupCard state={state} today={today} dispatch={dispatch} say={say} />
 
         <BedSection
           beds={state.beds}

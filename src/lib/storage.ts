@@ -150,6 +150,7 @@ export function normalize(raw: unknown): GardenState {
     careLog: list(raw.careLog).map(toCare).filter(defined),
     location: toLocation(raw.location),
     photos: list(raw.photos).map((p) => toPhoto(p, bedIds)).filter(defined),
+    lastBackupAt: strOrNull(raw.lastBackupAt),
     autoWeather: raw.autoWeather === true,
     notifyOn: raw.notifyOn === true,
     notifyTime: /^\d{2}:\d{2}$/.test(str(raw.notifyTime)) ? str(raw.notifyTime) : base.notifyTime,

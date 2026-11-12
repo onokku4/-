@@ -36,9 +36,11 @@ src/lib/                純粋関数。React にも現在時刻にも依存し�
   storage.ts            localStorage 読み書き + normalize（旧形式・壊れた値の救済）
   calendar.ts           月のマス目と、日ごとの天気・世話・水やり予定・写真
   photos.ts             成長記録（植え付けから何日目）の計算と並べ替え
+  backup.ts             バックアップ形式（封筒・検証・ファイル名）
   date.ts               ローカル日付
 src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バッジ）
 src/ui/photoStore.ts    写真本体の IndexedDB 保存と端末内縮小（長辺1280px JPEG）
+src/ui/backupFile.ts    zip の作成・読み込み（fflate）。共有シート or ダウンロード
 src/components/         表示のみ。計算は lib を呼ぶ
 tests/                  lib の単体テスト + 画面の統合テスト
 legacy/garden.jsx       移行前の単一ファイル版（参照用。編集しない）
@@ -94,5 +96,6 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 配信先は https か localhost が必須（Service Worker の制約）。`base: "./"` なのでサブディレクトリ配信でも動く。
 - 天気の記録：通常取得は過去92日＋予報16日。庭の位置を登録していれば、植え付け日（収穫済みの株も含む）以降の欠けを archive API で埋める（`backfillRange`）。
 - 土の種類・肥料の持続日数は一般的な目安。製品ごとの差は反映していない。
-- 写真はこの端末の IndexedDB にだけある。別端末では「画像なし」になり、ブラウザのサイトデータ削除で消える。
-- 候補: 連作障害の警告、収穫量の記録とグラフ、データの書き出し/読み込み（写真込み）。
+- 写真はこの端末の IndexedDB にだけある。別端末では「画像なし」になり、ブラウザのサイトデータ削除で消える。バックアップ zip（backup.json + photos/*.jpg）で持ち出せる。復元は丸ごと置き換え（マージしない）。
+- バックアップ形式を変えるときは `BACKUP_VERSION` を上げ、`parseBackup` で旧版を読めるようにする。
+- 候補: 連作障害の警告、収穫量の記録とグラフ、iCloud/Drive への自動バックアップ。

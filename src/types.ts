@@ -185,6 +185,8 @@ export interface GardenState {
   /** 登録済みなら、位置情報の許可なしにこの座標で天気を取る */
   location: GardenLocation | null;
   photos: Photo[];
+  /** 最後にバックアップを保存した日時（ISO）。未保存なら null */
+  lastBackupAt: string | null;
   autoWeather: boolean;
   notifyOn: boolean;
   notifyTime: string; // HH:MM

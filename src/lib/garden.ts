@@ -22,6 +22,9 @@ export type Action =
   | { type: "addPhoto"; id: string; bedId: string; date: string; note: string; today: string }
   | { type: "removePhoto"; id: string }
   | { type: "setPhotoNote"; id: string; note: string }
+  | { type: "backedUp"; at: string }
+  /** バックアップからの復元。normalize 済みの状態で丸ごと置き換える */
+  | { type: "restore"; state: GardenState }
   | { type: "clearLocation" }
   | { type: "weatherAdjust"; patch: Partial<WeatherReading>; today: string }
   | { type: "weatherReset"; today: string }
@@ -50,6 +53,7 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
   careLog: [],
   location: null,
   photos: [],
+  lastBackupAt: null,
   autoWeather: false,
   notifyOn: false,
   notifyTime: "07:00",
@@ -217,6 +221,10 @@ export function apply(s: GardenState, a: Action): Outcome {
       return s.photos.some((p) => p.id === a.id) ? { state: { ...s, photos: s.photos.filter((p) => p.id !== a.id) }, newBadges: [], toast: "写真を削除しました" } : quiet(s);
     case "setPhotoNote":
       return quiet({ ...s, photos: s.photos.map((p) => (p.id === a.id ? { ...p, note: a.note.trim() } : p)) });
+    case "backedUp":
+      return quiet({ ...s, lastBackupAt: a.at });
+    case "restore":
+      return quiet(a.state);
     case "weatherBackfill":
       return quiet({ ...s, weatherLog: mergeLog(s.weatherLog, a.daily) });
     case "setLocation":
