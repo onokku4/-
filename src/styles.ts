@@ -70,6 +70,12 @@ export const styles = {
   },
   editBox: { background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 10 },
   tempChip: { display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 7, padding: "2px 8px", fontSize: 11, fontWeight: 700 },
+  feedbackBtn: {
+    background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 7, padding: "3px 8px",
+    fontSize: 11, fontWeight: 700, color: "var(--muted)", cursor: "pointer",
+  },
+  tagChip: { border: "1px solid var(--line)", borderRadius: 999, padding: "3px 9px", fontSize: 11, fontWeight: 700, cursor: "pointer", background: "var(--panel)", color: "var(--muted)" },
+  tagChipOn: { background: "var(--amber-bg)", color: "var(--amber)", borderColor: "var(--amber)" },
   guideList: { margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.7, color: "var(--text)", display: "flex", flexDirection: "column", gap: 4 },
   guideText: { fontSize: 12.5, lineHeight: 1.7, color: "var(--text)" },
   gearRow: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, lineHeight: 1.5, color: "var(--text)" },

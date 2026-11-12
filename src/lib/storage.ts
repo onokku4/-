@@ -1,4 +1,4 @@
-import type { BadgeId, Bed, CareEvent, CareKind, Condition, GardenLocation, GardenState, GrowthStage, HarvestRecord, Photo, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
+import type { BadgeId, Bed, CareEvent, CareKind, Condition, DiaryEntry, GardenLocation, GardenState, GrowthStage, HarvestRecord, Photo, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
 import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
@@ -58,6 +58,7 @@ const toPlant = (r: Raw, bedIds: Set<string>, fallbackBed: string): Plant | unde
     lastWater: strOrNull(r.lastWater),
     bedId: bedIds.has(bedId) ? bedId : fallbackBed,
     harvestCount: num(r.harvestCount),
+    waterAdjust: Math.min(2, Math.max(0.5, num(r.waterAdjust, 1))),
   };
 };
 
@@ -66,6 +67,9 @@ const toRecord = (r: Raw): HarvestRecord | undefined =>
     ? {
         id: r.id,
         cropId: str(r.cropId),
+        bedId: strOrNull(r.bedId),
+        count: typeof r.count === "number" && r.count > 0 ? Math.round(r.count) : null,
+        grams: typeof r.grams === "number" && r.grams > 0 ? Math.round(r.grams) : null,
         cropName: str(r.cropName, "作物"),
         varietyName: str(r.varietyName),
         projectName: str(r.projectName) || str(r.cropName, "作物"),
@@ -128,7 +132,14 @@ const toStage = (r: Raw): GrowthStage | undefined =>
 
 const toPhoto = (r: Raw, bedIds: Set<string>): Photo | undefined =>
   typeof r.id === "string" && isDate(r.date) && typeof r.bedId === "string" && bedIds.has(r.bedId)
-    ? { id: r.id, bedId: r.bedId, date: r.date, note: str(r.note), stages: list(r.stages).map(toStage).filter(defined) }
+    ? { id: r.id, bedId: r.bedId, date: r.date, note: str(r.note), stages: list(r.stages).map(toStage).filter(defined), tags: strList(r.tags) }
+    : undefined;
+
+const strList = (v: unknown): string[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string"))] : []);
+
+const toDiary = (r: Raw, plantUids: Set<string>): DiaryEntry | undefined =>
+  typeof r.id === "string" && isDate(r.date) && typeof r.text === "string" && r.text.trim()
+    ? { id: r.id, date: r.date, text: r.text, plantUid: typeof r.plantUid === "string" && plantUids.has(r.plantUid) ? r.plantUid : null, tags: strList(r.tags) }
     : undefined;
 
 const toCare = (r: Raw): CareEvent | undefined =>
@@ -141,8 +152,10 @@ export function normalize(raw: unknown): GardenState {
   const beds = list(raw.beds).map(toBed).filter(defined);
   const safeBeds = beds.length > 0 ? beds : base.beds;
   const bedIds = new Set(safeBeds.map((b) => b.id));
+  const plants = list(raw.plants).map((p) => toPlant(p, bedIds, safeBeds[0]!.id)).filter(defined);
+  const plantUids = new Set(plants.map((p) => p.uid));
   return {
-    plants: list(raw.plants).map((p) => toPlant(p, bedIds, safeBeds[0]!.id)).filter(defined),
+    plants,
     beds: safeBeds,
     harvestLog: list(raw.harvestLog).map(toRecord).filter(defined),
     xp: Math.max(0, num(raw.xp)),
@@ -155,6 +168,7 @@ export function normalize(raw: unknown): GardenState {
     careLog: list(raw.careLog).map(toCare).filter(defined),
     location: toLocation(raw.location),
     photos: list(raw.photos).map((p) => toPhoto(p, bedIds)).filter(defined),
+    diary: list(raw.diary).map((d) => toDiary(d, plantUids)).filter(defined),
     lastBackupAt: strOrNull(raw.lastBackupAt),
     autoWeather: raw.autoWeather === true,
     notifyOn: raw.notifyOn === true,

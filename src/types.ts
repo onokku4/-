@@ -1,6 +1,9 @@
 export type SoilTypeId = "planter" | "field" | "hydro";
 export type Category = "果菜" | "葉物" | "根菜" | "ハーブ" | "ベリー" | "果樹";
 export type Bloom = "early" | "mid" | "late";
+export type Family =
+  | "ナス科" | "ウリ科" | "アブラナ科" | "マメ科" | "セリ科" | "キク科" | "ヒユ科" | "シソ科" | "ヒガンバナ科"
+  | "イネ科" | "アオイ科" | "バラ科" | "ツツジ科" | "ミカン科" | "クワ科" | "マタタビ科" | "モクセイ科";
 
 /**
  * 受粉特性。品種に指定があれば作物の既定値より優先する。
@@ -71,6 +74,8 @@ export interface Plant extends PlantRef {
   lastWater: string | null;
   bedId: string;
   harvestCount: number;
+  /** 水やり間隔の個別補正（1 = 標準）。「まだ湿ってた／乾きすぎ」の答えで動く */
+  waterAdjust: number;
 }
 
 export interface Bed extends Nutrients {
@@ -91,6 +96,11 @@ export interface Bed extends Nutrients {
 export interface HarvestRecord {
   id: string;
   cropId: string;
+  /** 収穫した場所（連作判定に使う）。旧データは null */
+  bedId: string | null;
+  /** 収穫量。未入力なら null */
+  count: number | null;
+  grams: number | null;
   cropName: string;
   varietyName: string;
   projectName: string;
@@ -153,6 +163,18 @@ export interface Photo {
   date: string;
   note: string;
   stages: GrowthStage[];
+  /** 病害虫・節目のタグ（data/agronomy.ts の PHOTO_TAGS の id） */
+  tags: string[];
+}
+
+/** 日記（文字のメモ）。株や場所に紐づけなくてもよい */
+export interface DiaryEntry {
+  id: string;
+  date: string;
+  text: string;
+  /** 対象の株（任意） */
+  plantUid: string | null;
+  tags: string[];
 }
 
 /** 登録した庭の位置。約1km（小数2桁）に丸めてから保存する */
@@ -197,6 +219,7 @@ export interface GardenState {
   /** 登録済みなら、位置情報の許可なしにこの座標で天気を取る */
   location: GardenLocation | null;
   photos: Photo[];
+  diary: DiaryEntry[];
   /** 最後にバックアップを保存した日時（ISO）。未保存なら null */
   lastBackupAt: string | null;
   autoWeather: boolean;

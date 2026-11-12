@@ -34,7 +34,7 @@ describe("バックアップ", () => {
   it("ファイル名と写真のパス、内容の説明", () => {
     expect(backupFileName(T)).toBe("sodateru-niwa-backup-20261112.zip");
     expect(photoPath("ph1")).toBe("photos/ph1.jpg");
-    expect(describeState(s)).toBe("株 1・場所 1・収穫 0件・写真 1枚・天気 0日");
+    expect(describeState(s)).toBe("株 1・場所 1・収穫 0件・写真 1枚・日記 0件・天気 0日");
   });
   it("写真があるのに30日以上保存していなければ注意", () => {
     expect(backupOverdue(initialState(), T)).toBe(false);

@@ -180,7 +180,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
         ) : (
           <div style={styles.grid}>
             {bedViews.map((v) => (
-              <PlantCard key={v.plant.uid} view={v} beds={state.beds} dispatch={dispatch} />
+              <PlantCard key={v.plant.uid} view={v} beds={state.beds} weatherLog={state.weatherLog} dispatch={dispatch} />
             ))}
           </div>
         ))}

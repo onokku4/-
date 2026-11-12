@@ -13,6 +13,9 @@ import { StepVariety, type PlantDraft } from "./wizard/StepVariety";
 interface Props {
   beds: GardenState["beds"];
   plants: GardenState["plants"];
+  harvestLog: GardenState["harvestLog"];
+  careLog: GardenState["careLog"];
+  location: GardenState["location"];
   today: string;
   /** 場所を決めてから開いたとき。手順1を飛ばす */
   initialBedId?: string | null;
@@ -27,7 +30,7 @@ const STEPS: readonly { n: Step; label: string }[] = [
   { n: 3, label: "品種・詳細" },
 ];
 
-export function AddWizard({ beds, plants, today, initialBedId = null, dispatch, onClose }: Props) {
+export function AddWizard({ beds, plants, harvestLog, careLog, location, today, initialBedId = null, dispatch, onClose }: Props) {
   const [step, setStep] = useState<Step>(initialBedId ? 2 : 1);
   const [pickedBed, setPickedBed] = useState<string | null>(initialBedId);
   const [crop, setCrop] = useState<Crop | null>(null);
@@ -88,6 +91,8 @@ export function AddWizard({ beds, plants, today, initialBedId = null, dispatch, 
       {step === 2 && (
         <StepCrop
           bed={bed}
+          state={{ harvestLog, plants, careLog, location }}
+          today={today}
           onPick={(c) => {
             setCrop(c);
             setStep(3);

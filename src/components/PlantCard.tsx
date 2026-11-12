@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { BookOpen, Check, Droplets, Pencil, Star, Sun, Thermometer, Trash2, X } from "lucide-react";
+import { gddEstimate } from "../lib/gdd";
+import type { WeatherLog } from "../types";
 import type { Bed } from "../types";
 import type { Action } from "../lib/garden";
 import { localDate } from "../lib/date";
@@ -15,15 +17,28 @@ interface Props {
   view: PlantView;
   /** 移動先の候補（省略時は移動できない） */
   beds?: Bed[];
+  /** 積算温度の収穫予測に使う。省略時は日数だけ */
+  weatherLog?: WeatherLog;
   dispatch: (a: Action) => void;
 }
 
-export function PlantCard({ view, beds, dispatch }: Props) {
+export function PlantCard({ view, beds, weatherLog, dispatch }: Props) {
   const { plant, bed, status, diagnosis } = view;
   const { crop, variety, due, urgent, interval, daysSinceWater, growthPct, byRain, temp } = status;
   const [confirmingRemove, setConfirmingRemove] = useState(false);
   const [editing, setEditing] = useState(false);
   const [guide, setGuide] = useState(false);
+  const [harvesting, setHarvesting] = useState(false);
+  const [amount, setAmount] = useState({ count: "", grams: "" });
+  const today = localDate();
+  const gdd = !crop.perennial && weatherLog ? gddEstimate(plant, variety, weatherLog, today) : null;
+  const harvest = () => {
+    const count = Number(amount.count);
+    const grams = Number(amount.grams);
+    dispatch({ type: "harvest", uid: plant.uid, recordId: newId(), today, count: count > 0 ? count : undefined, grams: grams > 0 ? grams : undefined });
+    setHarvesting(false);
+    setAmount({ count: "", grams: "" });
+  };
   const [draft, setDraft] = useState({ name: plant.projectName, date: plant.plantedDate, bedId: plant.bedId });
   const startEdit = () => {
     setDraft({ name: plant.projectName, date: plant.plantedDate, bedId: plant.bedId });
@@ -69,11 +84,35 @@ export function PlantCard({ view, beds, dispatch }: Props) {
           style={styles.iconBtn}
           title={perennial ? "収穫を記録" : "収穫する"}
           aria-label={perennial ? `${plant.projectName}の収穫を記録` : `${plant.projectName}を収穫する`}
-          onClick={() => dispatch({ type: "harvest", uid: plant.uid, recordId: newId(), today: localDate() })}
+          onClick={() => setHarvesting((v) => !v)}
         >
           <span aria-hidden="true">🧺</span>
         </button>
       </div>
+
+      {harvesting && (
+        <div style={styles.editBox} role="group" aria-label="収穫の記録">
+          <div style={{ fontSize: 12.5, fontWeight: 700 }}>🧺 収穫量（わかる範囲で。空でもOK）</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <label style={{ ...styles.editField, flex: 1 }}>
+              個数
+              <input type="number" inputMode="numeric" min={0} style={styles.editInput} value={amount.count} onChange={(e) => setAmount({ ...amount, count: e.target.value })} aria-label="収穫した個数" placeholder="例: 5" />
+            </label>
+            <label style={{ ...styles.editField, flex: 1 }}>
+              重さ（g）
+              <input type="number" inputMode="numeric" min={0} style={styles.editInput} value={amount.grams} onChange={(e) => setAmount({ ...amount, grams: e.target.value })} aria-label="収穫した重さ" placeholder="例: 320" />
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button style={styles.histBtn} onClick={() => setHarvesting(false)}>
+              <X size={14} aria-hidden="true" /> やめる
+            </button>
+            <button style={styles.addBtn} onClick={harvest} aria-label="収穫を確定">
+              <Check size={14} aria-hidden="true" /> 収穫を記録
+            </button>
+          </div>
+        </div>
+      )}
 
       {editing && (
         <div style={styles.editBox} role="group" aria-label="株の編集">
@@ -148,6 +187,23 @@ export function PlantCard({ view, beds, dispatch }: Props) {
         </div>
       )}
 
+      {gdd && gdd.loggedDays >= 7 && growthPct !== null && growthPct < 100 && (
+        <div style={{ ...styles.perennialRow, fontWeight: 400, color: "var(--muted)" }} title={`積算温度 ${gdd.accumulated}／${gdd.target}℃日（記録${gdd.loggedDays}日）`}>
+          {gdd.stalled ? (
+            <span style={{ color: "var(--sky)", fontWeight: 700 }}>🌡️ 気温が低く成長がほぼ止まっています（積算温度 {gdd.progressPct}%）</span>
+          ) : (
+            <>
+              🌡️ 収穫予測 {Number(gdd.expectedDate.slice(5, 7))}/{Number(gdd.expectedDate.slice(8, 10))} 頃
+            </>
+          )}
+          {!gdd.stalled && gdd.shiftDays !== 0 && (
+            <span style={{ ...styles.pill, background: gdd.shiftDays > 0 ? "var(--sky-bg)" : "var(--amber-bg)", color: gdd.shiftDays > 0 ? "var(--sky)" : "var(--amber)" }}>
+              {gdd.shiftDays > 0 ? `気温が低く${gdd.shiftDays}日遅れ` : `気温が高く${-gdd.shiftDays}日早い`}
+            </span>
+          )}
+        </div>
+      )}
+
       {status.frostRisk && crop.coldTenderBelowC !== undefined && (
         <div style={styles.frostWarn}>
           🧣 冷え込み注意：{crop.coldTenderBelowC}℃を下回っています。軒下や室内へ
@@ -170,6 +226,19 @@ export function PlantCard({ view, beds, dispatch }: Props) {
             : "そろそろ水やりを"
           : `あと約${interval - daysSinceWater}日でOK${byRain ? "（雨で水やり済み扱い）" : ""}`}
       </div>
+
+      {due && (
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", fontSize: 11, color: "var(--muted)" }}>
+          土を見て：
+          <button style={styles.feedbackBtn} onClick={() => dispatch({ type: "waterFeedback", uid: plant.uid, kind: "wet" })} title="次からの間隔を長くする">
+            まだ湿ってた
+          </button>
+          <button style={styles.feedbackBtn} onClick={() => dispatch({ type: "waterFeedback", uid: plant.uid, kind: "dry" })} title="次からの間隔を短くする">
+            乾きすぎてた
+          </button>
+          {plant.waterAdjust !== 1 && <span>（補正 ×{plant.waterAdjust}）</span>}
+        </div>
+      )}
 
       <div style={styles.cardActions}>
         {due && (

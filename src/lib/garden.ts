@@ -1,4 +1,4 @@
-import type { BadgeId, Bed, CareEvent, GardenState, Plant, SoilTypeId, WeatherLog, WeatherReading } from "../types";
+import type { BadgeId, Bed, CareEvent, DiaryEntry, GardenState, Plant, SoilTypeId, WeatherLog, WeatherReading } from "../types";
 import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilType, varietyOf } from "../data/catalog";
 import { CROP_BADGE_HARVESTS, GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
@@ -11,7 +11,11 @@ import { DEFAULT_WEATHER, adjust, applyAuto, manualDaily, mergeLog, resetToAuto 
 export type Action =
   | { type: "plant"; uid: string; cropId: string; varietyId: string; projectName: string; plantedDate: string; bedId: string; today: string }
   | { type: "water"; uid: string; today: string }
-  | { type: "harvest"; uid: string; recordId: string; today: string }
+  | { type: "harvest"; uid: string; recordId: string; today: string; count?: number; grams?: number }
+  | { type: "waterFeedback"; uid: string; kind: "wet" | "dry" }
+  | { type: "addDiary"; id: string; date: string; text: string; plantUid?: string; tags?: string[] }
+  | { type: "removeDiary"; id: string }
+  | { type: "setPhotoTags"; id: string; tags: string[] }
   | { type: "remove"; uid: string }
   | { type: "editPlant"; uid: string; projectName?: string; plantedDate?: string; bedId?: string }
   | { type: "renameBed"; bedId: string; name: string }
@@ -55,6 +59,7 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
   careLog: [],
   location: null,
   photos: [],
+  diary: [],
   lastBackupAt: null,
   autoWeather: false,
   notifyOn: false,
@@ -140,6 +145,7 @@ export function apply(s: GardenState, a: Action): Outcome {
         lastWater: null,
         bedId: a.bedId,
         harvestCount: 0,
+        waterAdjust: 1,
       };
       const plants = [...s.plants, plant];
       const next = cared({ ...s, plants }, XP.plant, a.today);
@@ -160,9 +166,13 @@ export function apply(s: GardenState, a: Action): Outcome {
       const r = plant && resolve(plant);
       if (!plant || !r) return quiet(s);
       const bed = s.beds.find((b) => b.id === plant.bedId);
+      const amount = (v: number | undefined) => (v !== undefined && Number.isFinite(v) && v > 0 ? Math.round(v) : null);
       const record = {
         id: a.recordId,
         cropId: r.crop.id,
+        bedId: bed?.id ?? null,
+        count: amount(a.count),
+        grams: amount(a.grams),
         cropName: r.crop.name,
         varietyName: r.variety.name,
         projectName: plant.projectName,
@@ -245,12 +255,33 @@ export function apply(s: GardenState, a: Action): Outcome {
     case "addPhoto": {
       const bed = s.beds.find((b) => b.id === a.bedId);
       if (!bed || s.photos.some((p) => p.id === a.id)) return quiet(s);
-      const photo = { id: a.id, bedId: a.bedId, date: a.date, note: a.note.trim(), stages: growthStages(s.plants, a.bedId, a.date) };
+      const photo = { id: a.id, bedId: a.bedId, date: a.date, note: a.note.trim(), stages: growthStages(s.plants, a.bedId, a.date), tags: [] };
       const next = cared({ ...s, photos: [...s.photos, photo] }, XP.photo, a.today);
       return { ...award(s, next), toast: `📷 「${bed.name}」の様子を記録しました +${XP.photo}XP` };
     }
     case "removePhoto":
       return s.photos.some((p) => p.id === a.id) ? { state: { ...s, photos: s.photos.filter((p) => p.id !== a.id) }, newBadges: [], toast: "写真を削除しました" } : quiet(s);
+    case "setPhotoTags":
+      return quiet({ ...s, photos: s.photos.map((p) => (p.id === a.id ? { ...p, tags: [...new Set(a.tags)] } : p)) });
+    case "waterFeedback": {
+      const plant = s.plants.find((p) => p.uid === a.uid);
+      if (!plant) return quiet(s);
+      // 「まだ湿ってた」は間隔を長く、「乾きすぎ」は短く。0.5〜2倍の範囲
+      const next = Math.min(2, Math.max(0.5, Math.round(plant.waterAdjust * (a.kind === "wet" ? 1.15 : 0.85) * 100) / 100));
+      return {
+        state: { ...s, plants: s.plants.map((p) => (p.uid === a.uid ? { ...p, waterAdjust: next } : p)) },
+        newBadges: [],
+        toast: a.kind === "wet" ? `💧 「${plant.projectName}」の間隔を少し長くしました（×${next}）` : `💧 「${plant.projectName}」の間隔を少し短くしました（×${next}）`,
+      };
+    }
+    case "addDiary": {
+      const text = a.text.trim();
+      if (!text || s.diary.some((d) => d.id === a.id)) return quiet(s);
+      const entry: DiaryEntry = { id: a.id, date: a.date, text, plantUid: a.plantUid && s.plants.some((p) => p.uid === a.plantUid) ? a.plantUid : null, tags: [...new Set(a.tags ?? [])] };
+      return { state: { ...s, diary: [...s.diary, entry] }, newBadges: [], toast: "📝 メモを記録しました" };
+    }
+    case "removeDiary":
+      return s.diary.some((d) => d.id === a.id) ? quiet({ ...s, diary: s.diary.filter((d) => d.id !== a.id) }) : quiet(s);
     case "setPhotoNote":
       return quiet({ ...s, photos: s.photos.map((p) => (p.id === a.id ? { ...p, note: a.note.trim() } : p)) });
     case "backedUp":

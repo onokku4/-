@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ChevronLeft, ChevronRight, CloudRain, Droplets, Leaf, RotateCcw, Sprout } from "lucide-react";
-import type { GardenState } from "../types";
-import { dayInfo, loggedDays, monthGrid, plantEmoji, shiftMonth } from "../lib/calendar";
+import { dayInfo, loggedDays, monthGrid, plantEmoji, shiftMonth, type DayState } from "../lib/calendar";
+import type { Action } from "../lib/garden";
 import { stageLine } from "../lib/photos";
 import { CONDITION_EMOJI, conditionInfo } from "../lib/weather";
 import { styles } from "../styles";
@@ -9,16 +9,17 @@ import { DayModal } from "./DayModal";
 import { PhotoThumb } from "./PhotoThumb";
 
 interface Props {
-  state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather" | "photos">;
+  state: DayState;
   today: string;
   onOpenPhoto: (id: string) => void;
+  dispatch: (a: Action) => void;
 }
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const md = (date: string) => `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
 
 /** カレンダー。写真がある日はマス全体が写真（Instagram のアーカイブ風）。日を押すと詳細 */
-export function CalendarView({ state, today, onOpenPhoto }: Props) {
+export function CalendarView({ state, today, onOpenPhoto, dispatch }: Props) {
   const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
   const [picked, setPicked] = useState<string>(today);
   const [open, setOpen] = useState<string | null>(null);
@@ -65,6 +66,8 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
             d.harvests.length > 0 ? "🧺" : "",
             d.planted.length > 0 ? "🌰" : "",
             d.tempIssues.length > 0 ? "🌡️" : "",
+            d.pestTags.length > 0 ? "🐛" : "",
+            d.diary.length > 0 ? "📝" : "",
           ].filter(Boolean);
           return (
             <button
@@ -176,7 +179,7 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
           </div>
         ))}
       </div>
-      {open && <DayModal state={state} date={open} today={today} onOpenPhoto={onOpenPhoto} onClose={() => setOpen(null)} />}
+      {open && <DayModal state={state} date={open} today={today} onOpenPhoto={onOpenPhoto} dispatch={dispatch} onClose={() => setOpen(null)} />}
     </section>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
 import type { Bed, Photo, WeatherLog } from "../types";
 import type { Action } from "../lib/garden";
+import { PHOTO_TAGS } from "../data/agronomy";
 import { soilType } from "../data/catalog";
 import { stageLine } from "../lib/photos";
 import { CONDITION_EMOJI } from "../lib/weather";
@@ -109,6 +110,22 @@ export function PhotoViewer({ photos, startId, beds, weatherLog, dispatch, onClo
         <div style={styles.viewerStage}>{stageLine(cur.stages)}</div>
         <div style={styles.viewerMeta}>
           <span>{bed ? `${soilType(bed.type).emoji} ${bed.name}` : "（削除された場所）"}</span>
+        </div>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }} role="group" aria-label="タグ">
+          {PHOTO_TAGS.map((t) => {
+            const on = cur.tags.includes(t.id);
+            return (
+              <button
+                key={t.id}
+                aria-pressed={on}
+                style={{ ...styles.tagChip, ...(on ? (t.kind === "pest" ? styles.tagChipOn : { background: "var(--mint-bg)", color: "var(--mint)", borderColor: "var(--mint)" }) : {}) }}
+                onClick={() => dispatch({ type: "setPhotoTags", id: cur.id, tags: on ? cur.tags.filter((x) => x !== t.id) : [...cur.tags, t.id] })}
+              >
+                {t.kind === "pest" ? "🐛 " : "🌱 "}
+                {t.label}
+              </button>
+            );
+          })}
         </div>
         <textarea
           style={{ ...styles.photoNote, background: "var(--panel-2)" }}

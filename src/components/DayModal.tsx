@@ -1,7 +1,10 @@
-import { CloudRain, Droplets, Leaf, RotateCcw, Sprout, Thermometer } from "lucide-react";
-import type { GardenState } from "../types";
+import { useState } from "react";
+import { CloudRain, Droplets, Leaf, NotebookPen, RotateCcw, Sprout, Thermometer, Trash2 } from "lucide-react";
+import type { Action } from "../lib/garden";
+import { PHOTO_TAGS, tagLabel } from "../data/agronomy";
+import { newId } from "../ui/id";
 import { resolve } from "../data/catalog";
-import { dayInfo } from "../lib/calendar";
+import { dayInfo, type DayState } from "../lib/calendar";
 import { daysBetween } from "../lib/date";
 import { stageLine } from "../lib/photos";
 import { tempVerdict } from "../lib/temperature";
@@ -11,18 +14,28 @@ import { Modal } from "./Modal";
 import { PhotoThumb } from "./PhotoThumb";
 
 interface Props {
-  state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather" | "photos">;
+  state: DayState;
   date: string;
   today: string;
   onOpenPhoto: (id: string) => void;
+  dispatch: (a: Action) => void;
   onClose: () => void;
 }
 
 const md = (date: string) => `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
 
 /** その日のデータ画面：天気、株ごとの様子（何日目・気温・水やり・写真）、出来事 */
-export function DayModal({ state, date, today, onOpenPhoto, onClose }: Props) {
+export function DayModal({ state, date, today, onOpenPhoto, dispatch, onClose }: Props) {
   const info = dayInfo(state, date, today);
+  const [text, setText] = useState("");
+  const [tags, setTags] = useState<string[]>([]);
+  const [plantUid, setPlantUid] = useState<string>("");
+  const addDiary = () => {
+    if (!text.trim()) return;
+    dispatch({ type: "addDiary", id: newId(), date, text, plantUid: plantUid || undefined, tags });
+    setText("");
+    setTags([]);
+  };
   const wx = info.weather;
   const watered = new Set(info.care.filter((c) => c.kind === "water").map((c) => c.label));
   // その日に植わっていた株（片付けた株は写真の記録だけ残る）
@@ -113,6 +126,54 @@ export function DayModal({ state, date, today, onOpenPhoto, onClose }: Props) {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <div style={styles.eyebrow}>
+            <NotebookPen size={12} aria-hidden="true" /> 日記
+          </div>
+          {info.diary.map((d) => (
+            <div key={d.id} style={{ ...styles.calDetailRow, alignItems: "flex-start", justifyContent: "space-between" }}>
+              <span style={{ flex: 1 }}>
+                {d.plantUid && <b>{state.plants.find((p) => p.uid === d.plantUid)?.projectName ?? ""}：</b>}
+                {d.text}
+                {d.tags.length > 0 && <span style={{ color: "var(--amber)", marginLeft: 6 }}>{d.tags.map(tagLabel).join("・")}</span>}
+              </span>
+              <button style={styles.editBtn} aria-label="このメモを削除" onClick={() => dispatch({ type: "removeDiary", id: d.id })}>
+                <Trash2 size={13} aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+          {!info.forecast && (
+            <div style={{ ...styles.editBox, marginTop: 6 }}>
+              <textarea style={styles.photoNote} rows={2} placeholder="観察メモ（花が3つ咲いた、葉の裏に虫、など）" value={text} onChange={(e) => setText(e.target.value)} aria-label="日記" />
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {PHOTO_TAGS.map((t) => {
+                  const on = tags.includes(t.id);
+                  return (
+                    <button key={t.id} aria-pressed={on} style={{ ...styles.tagChip, ...(on ? styles.tagChipOn : {}) }} onClick={() => setTags(on ? tags.filter((x) => x !== t.id) : [...tags, t.id])}>
+                      {t.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {plants.length > 0 && (
+                  <select style={{ ...styles.editInput, width: "auto", flex: 1 }} value={plantUid} onChange={(e) => setPlantUid(e.target.value)} aria-label="対象の株">
+                    <option value="">（株を指定しない）</option>
+                    {plants.map((p) => (
+                      <option key={p.uid} value={p.uid}>
+                        {p.projectName}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <button style={styles.addBtn} onClick={addDiary} disabled={!text.trim()}>
+                  記録
+                </button>
+              </div>
             </div>
           )}
         </div>

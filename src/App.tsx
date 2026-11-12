@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 import { BADGES } from "./data/game";
 import { diagnose } from "./lib/pollination";
+import { lastYearAround } from "./lib/calendar";
+import { tagLabel } from "./data/agronomy";
 import { feedSchedule } from "./lib/soil";
 import { frostTomorrow, recommendSupplies } from "./lib/supplies";
 import { plantStatus } from "./lib/watering";
@@ -23,6 +25,7 @@ import type { PlantView } from "./components/plantView";
 import { PollinationAlert } from "./components/PollinationAlert";
 import { SettingsView } from "./components/SettingsView";
 import { StatusBar } from "./components/StatusBar";
+import { SeasonCard } from "./components/SeasonCard";
 import { SuppliesCard } from "./components/SuppliesCard";
 import { TempAlert } from "./components/TempAlert";
 import { TabBar, type Tab } from "./components/TabBar";
@@ -70,6 +73,7 @@ export function App() {
   const todo = due.length + feedDue.length;
   const supplies = useMemo(() => recommendSupplies(state, today), [state, today]);
   const frost = frostTomorrow(state.weatherLog, today);
+  const lastYear = useMemo(() => lastYearAround(state, today), [state, today]);
   // ホームは「手を入れる株」だけ。全部は「場所」タブの作物タブで見る
   const attention = useMemo(
     () => views.filter((v) => v.status.due || v.status.frostRisk || v.status.temp.kind !== "ok" || v.diagnosis?.verdict === "ng" || v.diagnosis?.verdict === "action"),
@@ -113,7 +117,16 @@ export function App() {
             <TempAlert views={views} tempC={state.weather.current.tempC} />
             <PollinationAlert views={views} />
             {todo === 0 && state.plants.length > 0 && <div style={{ ...styles.alertBox, borderColor: "rgba(107,157,79,.4)", borderLeftColor: "var(--mint)" }}>✅ 今日やることはありません。</div>}
+            {lastYear.length > 0 && (
+              <section style={{ ...styles.alertBox, borderColor: "rgba(201,139,58,.45)", borderLeftColor: "var(--amber)" }} aria-label="去年の今頃">
+                <div style={{ ...styles.alertHead, marginBottom: 4 }}>🐛 去年の今頃に出た病害虫</div>
+                <div style={{ fontSize: 12, color: "var(--muted)" }}>
+                  {lastYear.map((l) => `${Number(l.date.slice(5, 7))}/${Number(l.date.slice(8, 10))} ${l.tags.map(tagLabel).join("・")}`).join("、")}。葉裏を見て先回りを。
+                </div>
+              </section>
+            )}
             <SuppliesCard items={supplies} />
+            <SeasonCard location={state.location} today={today} onPick={() => setWizard(true)} />
 
             <div style={{ ...styles.sectionHead, marginTop: 20 }}>
               <h2 style={styles.sectionTitle}>{views.length === 0 ? "育てている作物" : "手を入れる株"}</h2>
@@ -143,7 +156,7 @@ export function App() {
             ) : (
               <div style={styles.grid}>
                 {attention.map((v) => (
-                  <PlantCard key={v.plant.uid} view={v} beds={state.beds} dispatch={dispatch} />
+                  <PlantCard key={v.plant.uid} view={v} beds={state.beds} weatherLog={state.weatherLog} dispatch={dispatch} />
                 ))}
               </div>
             )}
@@ -167,7 +180,7 @@ export function App() {
           />
         )}
 
-        {tab === "calendar" && <CalendarView state={state} today={today} onOpenPhoto={setViewerPhoto} />}
+        {tab === "calendar" && <CalendarView state={state} today={today} onOpenPhoto={setViewerPhoto} dispatch={dispatch} />}
 
         {tab === "settings" && (
           <SettingsView state={state} today={today} fetching={fetching} onFetch={() => void fetchNow()} onRegister={() => void register()} dispatch={dispatch} say={say} />
@@ -177,7 +190,7 @@ export function App() {
       <TabBar tab={tab} onChange={setTab} badges={{ home: todo }} />
 
       {wizard !== false && (
-        <AddWizard beds={state.beds} plants={state.plants} today={today} initialBedId={typeof wizard === "string" ? wizard : null} dispatch={dispatch} onClose={() => setWizard(false)} />
+        <AddWizard beds={state.beds} plants={state.plants} harvestLog={state.harvestLog} careLog={state.careLog} location={state.location} today={today} initialBedId={typeof wizard === "string" ? wizard : null} dispatch={dispatch} onClose={() => setWizard(false)} />
       )}
       {viewerPhoto && (
         <PhotoViewer photos={sortedPhotos} startId={viewerPhoto} beds={state.beds} weatherLog={state.weatherLog} dispatch={dispatch} onClose={() => setViewerPhoto(null)} />

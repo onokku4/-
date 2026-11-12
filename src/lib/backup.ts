@@ -37,7 +37,7 @@ export const parseBackup = (json: unknown): ParseBackupResult => {
 
 /** バックアップの内容のひとこと（復元前の確認に出す） */
 export const describe = (s: GardenState): string =>
-  `株 ${s.plants.length}・場所 ${s.beds.length}・収穫 ${s.harvestLog.length}件・写真 ${s.photos.length}枚・天気 ${Object.keys(s.weatherLog).length}日`;
+  `株 ${s.plants.length}・場所 ${s.beds.length}・収穫 ${s.harvestLog.length}件・写真 ${s.photos.length}枚・日記 ${s.diary.length}件・天気 ${Object.keys(s.weatherLog).length}日`;
 
 /** 最後のバックアップからの経過で注意を出すか。写真があるのに30日以上バックアップしていなければ true */
 export const backupOverdue = (s: Pick<GardenState, "photos" | "lastBackupAt">, today: string): boolean => {

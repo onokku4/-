@@ -57,7 +57,7 @@ export function plantStatus(
   if (!r) return undefined;
   const { crop, variety } = r;
   const soilMult = bed ? soilType(bed.type).waterMult : 1;
-  const interval = Math.max(1, Math.round(crop.waterEvery * soilMult * weatherMultiplier(weather)));
+  const interval = Math.max(1, Math.round(crop.waterEvery * soilMult * weatherMultiplier(weather) * (plant.waterAdjust || 1)));
   const last = lastWaterOrRain(plant, bed, log, today);
   const daysSinceWater = Math.max(0, daysBetween(last.date, today));
   const ageDays = Math.max(0, daysBetween(plant.plantedDate, today));
