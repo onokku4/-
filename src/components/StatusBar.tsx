@@ -19,7 +19,7 @@ export function StatusBar({ xp, streak, waterCount, plantCount }: Props) {
             <div style={styles.levelLv}>Lv.{level.lv}</div>
             <div style={styles.levelTitle}>{level.title}</div>
           </div>
-          <Trophy size={30} color="#c98b3a" aria-hidden="true" />
+          <Trophy size={30} color="var(--amber)" aria-hidden="true" />
         </div>
         <div
           style={styles.xpTrack}
@@ -35,9 +35,9 @@ export function StatusBar({ xp, streak, waterCount, plantCount }: Props) {
           {xp} XP {next ? `／ 次まで ${next.min - xp}` : "（最高ランク！）"}
         </div>
       </div>
-      <Mini icon={<Flame size={22} color="#d2603a" aria-hidden="true" />} value={streak} label="連続日数" />
-      <Mini icon={<Droplets size={22} color="#5b8aa6" aria-hidden="true" />} value={waterCount} label="水やり回数" />
-      <Mini icon={<Leaf size={22} color="#6b9d4f" aria-hidden="true" />} value={plantCount} label="育成中" />
+      <Mini icon={<Flame size={22} color="var(--flame)" aria-hidden="true" />} value={streak} label="連続日数" />
+      <Mini icon={<Droplets size={22} color="var(--sky)" aria-hidden="true" />} value={waterCount} label="水やり回数" />
+      <Mini icon={<Leaf size={22} color="var(--mint)" aria-hidden="true" />} value={plantCount} label="育成中" />
     </section>
   );
 }

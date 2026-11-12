@@ -12,18 +12,18 @@ interface Props {
 export function FeedAlert({ due, onPick }: Props) {
   if (due.length === 0) return null;
   return (
-    <section style={{ ...styles.alertBox, background: "linear-gradient(135deg,#6b9d4f,#4f7d3a)", boxShadow: "0 8px 22px rgba(80,120,60,.3)" }} aria-label="追肥アラート">
+    <section style={{ ...styles.alertBox, borderColor: "rgba(61,220,151,.45)", borderLeftColor: "var(--mint)" }} aria-label="追肥アラート">
       <div style={styles.alertHead}>
-        <Leaf size={20} color="#fff" aria-hidden="true" />
+        <Leaf size={20} color="var(--panel)" aria-hidden="true" />
         <span>追肥のタイミングです</span>
       </div>
       <div style={styles.alertChips}>
         {due.map((b) => (
-          <button key={b.id} onClick={() => onPick(b.id)} style={{ ...styles.alertChip, background: "#fff", color: "#3d5236" }}>
+          <button key={b.id} onClick={() => onPick(b.id)} style={{ ...styles.alertChip, background: "var(--panel-2)", color: "var(--text)" }}>
             <span>
               {soilType(b.type).emoji} {b.name}
             </span>
-            <span style={{ ...styles.urgentTag, background: "#eef4e6", color: "#4f7d3a" }}>肥料を記録</span>
+            <span style={{ ...styles.urgentTag, background: "var(--mint-bg)", color: "var(--mint)" }}>肥料を記録</span>
           </button>
         ))}
       </div>

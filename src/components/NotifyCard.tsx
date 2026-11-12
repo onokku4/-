@@ -23,9 +23,9 @@ export function NotifyCard({ notifyOn, notifyTime, dispatch, say }: Props) {
     <section style={styles.notifyCard} aria-label="水やり通知の設定">
       <div style={styles.notifyLeft}>
         {notifyOn ? (
-          <Bell size={20} color="#c98b3a" aria-hidden="true" />
+          <Bell size={20} color="var(--amber)" aria-hidden="true" />
         ) : (
-          <BellOff size={20} color="#9aa089" aria-hidden="true" />
+          <BellOff size={20} color="var(--muted)" aria-hidden="true" />
         )}
         <div>
           <div style={styles.notifyTitle}>水やり通知</div>
@@ -34,7 +34,7 @@ export function NotifyCard({ notifyOn, notifyTime, dispatch, say }: Props) {
       </div>
       <div style={styles.notifyRight}>
         <div style={styles.timeWrap}>
-          <Clock size={14} color="#9aa089" aria-hidden="true" />
+          <Clock size={14} color="var(--muted)" aria-hidden="true" />
           <input
             type="time"
             aria-label="通知時刻"
@@ -45,7 +45,7 @@ export function NotifyCard({ notifyOn, notifyTime, dispatch, say }: Props) {
         </div>
         <button
           onClick={() => (notifyOn ? dispatch({ type: "setNotify", on: false }) : void turnOn())}
-          style={{ ...styles.notifyToggleBtn, background: notifyOn ? "#c98b3a" : "#6b9d4f" }}
+          style={{ ...styles.notifyToggleBtn, background: notifyOn ? "var(--amber)" : "var(--mint)" }}
         >
           {notifyOn ? "オフにする" : "オンにする"}
         </button>

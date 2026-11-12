@@ -7,7 +7,7 @@ export function BadgeGrid({ earned }: { earned: readonly BadgeId[] }) {
   return (
     <section style={{ marginTop: 32 }}>
       <h2 style={styles.sectionTitle}>
-        <Award size={20} color="#c98b3a" aria-hidden="true" /> 実績バッジ
+        <Award size={20} color="var(--amber)" aria-hidden="true" /> 実績バッジ
       </h2>
       <div style={styles.badgeGrid}>
         {BADGES.map((b) => {

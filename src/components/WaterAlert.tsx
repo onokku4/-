@@ -15,7 +15,7 @@ export function WaterAlert({ due, weatherLabel, dispatch }: Props) {
   return (
     <section style={styles.alertBox} aria-label="水やりアラート">
       <div style={styles.alertHead}>
-        <Droplets size={20} color="#fff" aria-hidden="true" />
+        <Droplets size={20} color="var(--panel)" aria-hidden="true" />
         <span>水やりのタイミングです（{weatherLabel}補正済み）</span>
       </div>
       <div style={styles.alertChips}>
@@ -25,8 +25,8 @@ export function WaterAlert({ due, weatherLabel, dispatch }: Props) {
             onClick={() => dispatch({ type: "water", uid: plant.uid, today: localDate() })}
             style={{
               ...styles.alertChip,
-              background: status.urgent ? "#c0432a" : "#fff",
-              color: status.urgent ? "#fff" : "#3d5236",
+              background: status.urgent ? "var(--flame)" : "var(--panel-2)",
+              color: status.urgent ? "var(--panel)" : "var(--text)",
             }}
           >
             <span>

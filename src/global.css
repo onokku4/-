@@ -1,24 +1,58 @@
+/* CREW OS 系の配色トークン。暗い地にパネル、アクセントは炎色・ミント・琥珀 */
 :root {
-  --display: "Yuji Syuku", serif;
-  --body: "Zen Maru Gothic", sans-serif;
+  --ground: #08090c;
+  --panel: #12141b;
+  --panel-2: #171a23;
+  --line: #262b36;
+  --text: #eef1f6;
+  --muted: #8b93a3;
+  --dim: #59606f;
+  --flame: #ff5b2e;
+  --flame-soft: #ff7a52;
+  --mint: #3ddc97;
+  --amber: #f5b942;
+  --sky: #5aa9e6;
+  --on-accent: #0b0d12;
+  --mint-bg: rgba(61, 220, 151, 0.1);
+  --flame-bg: rgba(255, 91, 46, 0.12);
+  --amber-bg: rgba(245, 185, 66, 0.12);
+  --sky-bg: rgba(90, 169, 230, 0.12);
+
+  --display: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", "Meiryo", system-ui, sans-serif;
+  --body: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", "Meiryo", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+  --tabbar: 64px;
+  color-scheme: dark;
 }
 
 * {
   box-sizing: border-box;
 }
 
-body {
-  margin: 0;
+html {
+  background: var(--ground);
 }
 
-button {
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
   font-family: var(--body);
 }
 
 button:focus-visible,
 input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
 [role="dialog"]:focus-visible {
-  outline: 3px solid #c98b3a;
+  outline: 2px solid var(--mint);
   outline-offset: 2px;
 }
 
@@ -26,8 +60,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
-input[type="date"]::-webkit-calendar-picker-indicator {
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
+  filter: invert(0.8);
 }
 
 @keyframes sway {
@@ -54,17 +90,35 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 
 /* 天気パネル：広い幅では右寄せ、狭い幅では左寄せで全幅 */
-.wx-box { text-align: right; }
-.wx-line { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px 10px; }
-@media (max-width: 640px) {
-  .wx-box { width: 100%; text-align: left; }
-  .wx-line { justify-content: flex-start; }
-}
+.wx-box { text-align: left; }
+.wx-line { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
 
 /* ステータスバー：狭い幅では2列 */
-.stat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 26px; }
+.stat-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 @media (max-width: 600px) {
   .stat-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
   .stat-grid > :first-child { grid-column: 1 / -1; }
   .stat-grid > :last-child:nth-child(even) { grid-column: 1 / -1; }
 }
+
+/* 写真ビューア：横スワイプでページ送り */
+.swipe-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  height: 100%;
+}
+.swipe-track::-webkit-scrollbar { display: none; }
+.swipe-page {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Instagram のアーカイブ風：写真がある日はマス全体が写真 */
+.cal-photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }

@@ -14,6 +14,8 @@ interface Props {
   beds: GardenState["beds"];
   plants: GardenState["plants"];
   today: string;
+  /** 場所を決めてから開いたとき。手順1を飛ばす */
+  initialBedId?: string | null;
   dispatch: (a: Action) => void;
   onClose: () => void;
 }
@@ -25,9 +27,9 @@ const STEPS: readonly { n: Step; label: string }[] = [
   { n: 3, label: "品種・詳細" },
 ];
 
-export function AddWizard({ beds, plants, today, dispatch, onClose }: Props) {
-  const [step, setStep] = useState<Step>(1);
-  const [pickedBed, setPickedBed] = useState<string | null>(null);
+export function AddWizard({ beds, plants, today, initialBedId = null, dispatch, onClose }: Props) {
+  const [step, setStep] = useState<Step>(initialBedId ? 2 : 1);
+  const [pickedBed, setPickedBed] = useState<string | null>(initialBedId);
   const [crop, setCrop] = useState<Crop | null>(null);
   const [newType, setNewType] = useState<SoilTypeId>("planter");
   const [newMix, setNewMix] = useState<string>("veg");
@@ -61,11 +63,11 @@ export function AddWizard({ beds, plants, today, dispatch, onClose }: Props) {
       <ol style={{ ...styles.stepBar, listStyle: "none", margin: "0 0 18px", padding: 0 }} aria-label="手順">
         {STEPS.map(({ n, label }, i) => (
           <li key={n} style={{ ...styles.stepDot, gap: 8 }} aria-current={step === n ? "step" : undefined}>
-            {i > 0 && <ChevronRight size={14} color="#c9c2af" aria-hidden="true" />}
-            <span style={{ ...styles.stepNum, background: step >= n ? "#6b9d4f" : "#d6cfbb" }}>
+            {i > 0 && <ChevronRight size={14} color="var(--dim)" aria-hidden="true" />}
+            <span style={{ ...styles.stepNum, background: step >= n ? "var(--mint)" : "var(--line)" }}>
               {step > n ? <Check size={13} aria-hidden="true" /> : n}
             </span>
-            <span style={{ ...styles.stepLabel, color: step >= n ? "#3d4a35" : "#a8ac98" }}>{label}</span>
+            <span style={{ ...styles.stepLabel, color: step >= n ? "var(--text)" : "var(--dim)" }}>{label}</span>
           </li>
         ))}
       </ol>

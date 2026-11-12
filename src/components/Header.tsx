@@ -1,23 +1,34 @@
-import { Sprout } from "lucide-react";
+import type { WeatherState } from "../types";
+import { CONDITION_EMOJI, conditionInfo } from "../lib/weather";
 import { styles } from "../styles";
-import { WeatherPanel } from "./WeatherPanel";
 
-type PanelProps = Parameters<typeof WeatherPanel>[0];
+interface Props {
+  weather: WeatherState;
+  onWeather: () => void;
+}
 
-export function Header(props: PanelProps) {
+/** 上部の帯。ロゴと今日の天気だけ。天気を押すとホームの天気パネルへ */
+export function Header({ weather, onWeather }: Props) {
+  const c = weather.current;
   return (
     <header style={styles.header}>
       <div style={styles.headerInner}>
         <div style={styles.brand}>
-          <div style={styles.brandMark}>
-            <Sprout size={26} color="#fff" aria-hidden="true" />
+          <div style={styles.brandMark} aria-hidden="true">
+            <i style={{ ...styles.brandBar, height: "42%", background: "var(--flame)" }} />
+            <i style={{ ...styles.brandBar, height: "74%", background: "var(--mint)" }} />
+            <i style={{ ...styles.brandBar, height: "100%", background: "var(--flame)" }} />
+            <i style={{ ...styles.brandBar, height: "56%", background: "var(--amber)" }} />
           </div>
           <div>
             <h1 style={styles.brandTitle}>そだてる庭</h1>
-            <p style={styles.brandSub}>HOME FARM ALMANAC</p>
+            <p style={styles.brandSub}>Home Farm OS</p>
           </div>
         </div>
-        <WeatherPanel {...props} />
+        <button style={{ ...styles.headerWx, background: "transparent", border: "1px solid var(--line)", borderRadius: 9, padding: "6px 10px", cursor: "pointer" }} onClick={onWeather} aria-label="今日の天気">
+          <span aria-hidden="true">{CONDITION_EMOJI[c.condition]}</span>
+          {conditionInfo(c.condition).label} {c.tempC}℃
+        </button>
       </div>
     </header>
   );

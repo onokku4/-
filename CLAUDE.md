@@ -42,9 +42,20 @@ src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バ�
 src/ui/photoStore.ts    写真本体の IndexedDB 保存と端末内縮小（長辺1280px JPEG）
 src/ui/backupFile.ts    zip の作成・読み込み（fflate）。共有シート or ダウンロード
 src/components/         表示のみ。計算は lib を呼ぶ
+  TabBar / App          下部メニュータブ（ホーム・場所・カレンダー・設定）
+  BedsView              場所の一覧 → 詳細（作物／状態／写真の下位タブ）
+  CalendarView          写真がある日はマスが写真（Instagram アーカイブ風）
+  PhotoViewer           全画面・横スワイプ（scroll-snap）でページ送り
+  SettingsView          天気の位置・通知・バックアップ・履歴・バッジ
 tests/                  lib の単体テスト + 画面の統合テスト
 legacy/garden.jsx       移行前の単一ファイル版（参照用。編集しない）
 ```
+
+## 見た目（CREW OS 準拠）
+
+- 配色・字体は `src/global.css` の CSS 変数で定義（暗い地 `--ground`、パネル `--panel`、罫線 `--line`、アクセント `--flame` / `--mint` / `--amber` / `--sky`）。色を直書きしない。
+- 見出しは太いゴシック（900）＋字間詰め、ラベル・数値は `--mono`。小さな大文字のアイブロウ（`styles.eyebrow`）で区切る。
+- ホームは「今日やること」と手を入れる株だけ。全部の株は「場所」→ 作物タブ。
 
 ## 設計ルール
 

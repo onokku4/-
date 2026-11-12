@@ -17,7 +17,7 @@ export function PhotoThumb({ id, alt, style, onClick }: Props) {
   if (url === "loading") return <div style={box} aria-hidden="true" />;
   if (url === null)
     return (
-      <div style={{ ...box, display: "flex", alignItems: "center", justifyContent: "center", color: "#a8ac98" }} title="この端末に画像がありません">
+      <div style={{ ...box, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--dim)" }} title="この端末に画像がありません">
         <ImageOff size={18} aria-hidden="true" />
       </div>
     );

@@ -41,9 +41,9 @@ export function StepCrop({ bed, onPick, onBack }: Props) {
               onClick={() => setFilter(c.id)}
               style={{
                 ...styles.catChip,
-                background: active ? "#3a5630" : "#fff",
-                color: active ? "#fff" : "#5a6b4d",
-                borderColor: active ? "#3a5630" : "#e3ddcf",
+                background: active ? "var(--text)" : "var(--panel)",
+                color: active ? "var(--panel)" : "var(--muted)",
+                borderColor: active ? "var(--text)" : "var(--line)",
               }}
             >
               {c.label}

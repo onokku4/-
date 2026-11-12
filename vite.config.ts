@@ -19,8 +19,8 @@ export default defineConfig({
         scope: "./",
         display: "standalone",
         orientation: "portrait",
-        background_color: "#f7f3e9",
-        theme_color: "#4a6b3a",
+        background_color: "#08090c",
+        theme_color: "#08090c",
         icons: [
           { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
           { src: "pwa-512.png", sizes: "512x512", type: "image/png" },
@@ -31,21 +31,6 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
         navigateFallback: "index.html",
         runtimeCaching: [
-          {
-            // Google Fonts：CSS は更新を見つつ即表示、フォント本体は長期キャッシュ
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
-            handler: "StaleWhileRevalidate",
-            options: { cacheName: "google-fonts-css" },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
-            handler: "CacheFirst",
-            options: {
-              cacheName: "google-fonts-files",
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              cacheableResponse: { statuses: [0, 200] },
-            },
-          },
           {
             // 天気は常に最新を取りに行く。失敗時は state に残った前回値を使う
             urlPattern: /^https:\/\/api\.open-meteo\.com\//,

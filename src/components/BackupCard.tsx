@@ -60,9 +60,9 @@ export function BackupCard({ state, today, dispatch, say }: Props) {
   };
 
   return (
-    <section style={{ ...styles.notifyCard, marginTop: 14, borderColor: overdue ? "#ecd9ae" : "#e8e1d0" }} aria-label="バックアップ">
+    <section style={{ ...styles.notifyCard, marginTop: 14, borderColor: overdue ? "var(--line)" : "var(--line)" }} aria-label="バックアップ">
       <div style={styles.notifyLeft}>
-        {overdue ? <ShieldAlert size={20} color="#c98b3a" aria-hidden="true" /> : <ShieldCheck size={20} color="#6b9d4f" aria-hidden="true" />}
+        {overdue ? <ShieldAlert size={20} color="var(--amber)" aria-hidden="true" /> : <ShieldCheck size={20} color="var(--mint)" aria-hidden="true" />}
         <div>
           <div style={styles.notifyTitle}>バックアップ</div>
           <div style={styles.notifySub}>
@@ -73,7 +73,7 @@ export function BackupCard({ state, today, dispatch, say }: Props) {
         </div>
       </div>
       <div style={styles.notifyRight}>
-        <button style={{ ...styles.notifyToggleBtn, background: "#6b9d4f", opacity: busy ? 0.6 : 1 }} disabled={busy !== null} onClick={() => void save()}>
+        <button style={{ ...styles.notifyToggleBtn, background: "var(--mint)", opacity: busy ? 0.6 : 1 }} disabled={busy !== null} onClick={() => void save()}>
           <Download size={15} aria-hidden="true" style={{ verticalAlign: -3, marginRight: 4 }} />
           {busy === "save" ? "作成中…" : "バックアップを保存"}
         </button>

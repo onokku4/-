@@ -37,8 +37,8 @@ export function StepBed({ beds, bedId, newType, newMix, onPick, onPickType, onPi
               onClick={() => onPick(b.id)}
               style={{
                 ...styles.bedRowPick,
-                borderColor: active ? "#6b9d4f" : "#e3ddcf",
-                background: active ? "#eef4e6" : "#fff",
+                borderColor: active ? "var(--mint)" : "var(--line)",
+                background: active ? "var(--mint-bg)" : "var(--panel)",
               }}
             >
               <span style={{ fontSize: 26 }} aria-hidden="true">
@@ -52,7 +52,7 @@ export function StepBed({ beds, bedId, newType, newMix, onPick, onPickType, onPi
                   {findSoilMix(b.soilMix) && ` ・ ${findSoilMix(b.soilMix)?.name.replace(/（.*）/, "")}`}
                 </span>
               </span>
-              {active && <Check size={18} color="#6b9d4f" aria-hidden="true" />}
+              {active && <Check size={18} color="var(--mint)" aria-hidden="true" />}
             </button>
           );
         })}
@@ -69,8 +69,8 @@ export function StepBed({ beds, bedId, newType, newMix, onPick, onPickType, onPi
               onClick={() => onPickType(s.id)}
               style={{
                 ...styles.soilTypeBtn,
-                borderColor: newType === s.id ? "#6b9d4f" : "#e3ddcf",
-                background: newType === s.id ? "#eef4e6" : "#fff",
+                borderColor: newType === s.id ? "var(--mint)" : "var(--line)",
+                background: newType === s.id ? "var(--mint-bg)" : "var(--panel)",
               }}
             >
               <span style={{ fontSize: 22 }} aria-hidden="true">

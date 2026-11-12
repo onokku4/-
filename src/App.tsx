@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, History, Images, Plus, Sprout } from "lucide-react";
+import { Plus } from "lucide-react";
 import { BADGES } from "./data/game";
 import { diagnose } from "./lib/pollination";
 import { feedSchedule } from "./lib/soil";
@@ -11,32 +11,32 @@ import { useToday } from "./hooks/useToday";
 import { useWaterNotify } from "./hooks/useWaterNotify";
 import { styles } from "./styles";
 import { AddWizard } from "./components/AddWizard";
-import { BadgeGrid } from "./components/BadgeGrid";
-import { AlbumModal } from "./components/AlbumModal";
-import { BackupCard } from "./components/BackupCard";
 import { BadgePopup } from "./components/BadgePopup";
-import { CalendarModal } from "./components/CalendarModal";
-import { BedSection } from "./components/BedSection";
+import { BedsView } from "./components/BedsView";
+import { CalendarView } from "./components/CalendarView";
 import { FeedAlert } from "./components/FeedAlert";
 import { Header } from "./components/Header";
-import { HistoryModal } from "./components/HistoryModal";
-import { NotifyCard } from "./components/NotifyCard";
+import { PhotoViewer } from "./components/PhotoViewer";
 import { PlantCard } from "./components/PlantCard";
 import type { PlantView } from "./components/plantView";
 import { PollinationAlert } from "./components/PollinationAlert";
+import { SettingsView } from "./components/SettingsView";
 import { StatusBar } from "./components/StatusBar";
+import { TabBar, type Tab } from "./components/TabBar";
 import { Toast } from "./components/Toast";
 import { WaterAlert } from "./components/WaterAlert";
+import { WeatherPanel } from "./components/WeatherPanel";
 
 export function App() {
   const { state, dispatch, toast, say, badgeQueue, dismissBadge } = useGarden();
   const today = useToday();
-  const [showAdd, setShowAdd] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
-  const [showCalendar, setShowCalendar] = useState(false);
-  /** アルバムを開く。文字列なら、その写真を最初に大きく表示 */
-  const [album, setAlbum] = useState<false | true | string>(false);
+  const [tab, setTab] = useState<Tab>("home");
+  const [openBedId, setOpenBedId] = useState<string | null>(null);
+  /** 植えるウィザード。文字列ならその場所を最初に選ぶ */
+  const [wizard, setWizard] = useState<false | true | string>(false);
+  const [viewerPhoto, setViewerPhoto] = useState<string | null>(null);
   const [feedTarget, setFeedTarget] = useState<string | null>(null);
+  const [showWeather, setShowWeather] = useState(false);
   const { fetching, fetchNow, register } = useAutoWeather(state, dispatch, say);
 
   // 各株の水やり状態・受粉診断はここで1回だけ計算して配る
@@ -63,102 +63,111 @@ export function App() {
   useWaterNotify(state, dueNames, feedDue.map((b) => b.name), dispatch, say);
 
   const popupBadge = BADGES.find((b) => b.id === badgeQueue[0]);
+  const sortedPhotos = useMemo(() => [...state.photos].sort((a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id)), [state.photos]);
+  const todo = due.length + feedDue.length;
+  // ホームは「手を入れる株」だけ。全部は「場所」タブの作物タブで見る
+  const attention = useMemo(
+    () => views.filter((v) => v.status.due || v.status.frostRisk || v.diagnosis?.verdict === "ng" || v.diagnosis?.verdict === "action"),
+    [views],
+  );
+
+  const goFeed = (bedId: string) => {
+    setFeedTarget(bedId);
+    setOpenBedId(bedId);
+    setTab("beds");
+  };
 
   return (
     <div style={styles.page}>
       <Header
         weather={state.weather}
-        location={state.location}
-        autoWeather={state.autoWeather}
-        fetching={fetching}
-        onFetch={() => void fetchNow()}
-        onRegister={() => void register()}
-        dispatch={dispatch}
+        onWeather={() => {
+          setTab("home");
+          setShowWeather((v) => !v);
+        }}
       />
 
       <main style={styles.main}>
-        <StatusBar xp={state.xp} streak={state.streak} waterCount={state.waterCount} plantCount={state.plants.length} />
-        <WaterAlert due={due} weatherLabel={conditionInfo(state.weather.current.condition).label} dispatch={dispatch} />
-        <FeedAlert due={feedDue} onPick={setFeedTarget} />
-        <PollinationAlert views={views} />
-        <NotifyCard notifyOn={state.notifyOn} notifyTime={state.notifyTime} dispatch={dispatch} say={say} />
-        <BackupCard state={state} today={today} dispatch={dispatch} say={say} />
-
-        <BedSection
-          beds={state.beds}
-          plants={state.plants}
-          photos={state.photos}
-          today={today}
-          say={say}
-          onOpenPhoto={setAlbum}
-          feedTarget={feedTarget}
-          onFeedTargetDone={() => setFeedTarget(null)}
-          dispatch={dispatch}
-          onAdd={() => setShowAdd(true)}
-        />
-
-        <section>
-          <div style={{ ...styles.sectionHead, marginTop: 26 }}>
-            <h2 style={styles.sectionTitle}>
-              <Sprout size={20} color="#6b9d4f" aria-hidden="true" /> 育てている作物
-            </h2>
-            <div style={styles.btnRow}>
-              <button style={styles.histBtn} onClick={() => setShowCalendar(true)}>
-                <CalendarDays size={16} aria-hidden="true" /> カレンダー
-              </button>
-              <button style={styles.histBtn} onClick={() => setAlbum(true)}>
-                <Images size={16} aria-hidden="true" /> アルバム{state.photos.length > 0 ? `(${state.photos.length})` : ""}
-              </button>
-              <button style={styles.histBtn} onClick={() => setShowHistory(true)}>
-                <History size={16} aria-hidden="true" /> 履歴{state.harvestLog.length > 0 ? `(${state.harvestLog.length})` : ""}
-              </button>
-              <button style={styles.addBtn} onClick={() => setShowAdd(true)}>
-                <Plus size={18} aria-hidden="true" /> 植える
-              </button>
-            </div>
-          </div>
-
-          {views.length === 0 ? (
-            <div style={styles.empty}>
-              <div style={{ fontSize: 48, marginBottom: 8 }} aria-hidden="true">
-                🪴
+        {tab === "home" && (
+          <>
+            {showWeather && (
+              <div style={{ ...styles.notifyCard, display: "block", marginBottom: 14 }}>
+                <WeatherPanel weather={state.weather} location={state.location} autoWeather={state.autoWeather} fetching={fetching} onFetch={() => void fetchNow()} onRegister={() => void register()} dispatch={dispatch} />
               </div>
-              <p style={styles.emptyText}>まだ何も植えていません。</p>
-              <button style={styles.addBtnBig} onClick={() => setShowAdd(true)}>
-                <Plus size={18} aria-hidden="true" /> 最初の一株を植える
-              </button>
-            </div>
-          ) : (
-            <div style={styles.grid}>
-              {views.map((v) => (
-                <PlantCard key={v.plant.uid} view={v} dispatch={dispatch} />
-              ))}
-            </div>
-          )}
-        </section>
+            )}
+            <div style={styles.eyebrow}>Today</div>
+            <StatusBar xp={state.xp} streak={state.streak} waterCount={state.waterCount} plantCount={state.plants.length} />
+            <WaterAlert due={due} weatherLabel={conditionInfo(state.weather.current.condition).label} dispatch={dispatch} />
+            <FeedAlert due={feedDue} onPick={goFeed} />
+            <PollinationAlert views={views} />
+            {todo === 0 && state.plants.length > 0 && <div style={{ ...styles.alertBox, borderColor: "rgba(61,220,151,.4)", borderLeftColor: "var(--mint)" }}>✅ 今日やることはありません。</div>}
 
-        <BadgeGrid earned={state.earnedBadges} />
+            <div style={{ ...styles.sectionHead, marginTop: 20 }}>
+              <h2 style={styles.sectionTitle}>{views.length === 0 ? "育てている作物" : "手を入れる株"}</h2>
+              <div style={styles.btnRow}>
+                {views.length > 0 && (
+                  <button style={styles.histBtn} onClick={() => setTab("beds")}>
+                    すべての作物（{views.length}）
+                  </button>
+                )}
+                <button style={styles.addBtn} onClick={() => setWizard(true)}>
+                  <Plus size={18} aria-hidden="true" /> 植える
+                </button>
+              </div>
+            </div>
+            {views.length === 0 ? (
+              <div style={styles.empty}>
+                <div style={{ fontSize: 48, marginBottom: 8 }} aria-hidden="true">
+                  🪴
+                </div>
+                <p style={styles.emptyText}>まだ何も植えていません。</p>
+                <button style={styles.addBtnBig} onClick={() => setWizard(true)}>
+                  <Plus size={18} aria-hidden="true" /> 最初の一株を植える
+                </button>
+              </div>
+            ) : attention.length === 0 ? (
+              <p style={{ ...styles.calNote, margin: 0 }}>今は手を入れる株はありません。様子は「場所」タブから。</p>
+            ) : (
+              <div style={styles.grid}>
+                {attention.map((v) => (
+                  <PlantCard key={v.plant.uid} view={v} dispatch={dispatch} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
-        <footer style={styles.footer}>🌾 データはこのブラウザに自動保存されます。</footer>
+        {tab === "beds" && (
+          <BedsView
+            state={state}
+            views={views}
+            today={today}
+            openBedId={openBedId}
+            onOpenBed={setOpenBedId}
+            feedTarget={feedTarget}
+            onFeedTargetDone={() => setFeedTarget(null)}
+            onAddBed={() => setWizard(true)}
+            onPlant={(bedId) => setWizard(bedId)}
+            onOpenPhoto={setViewerPhoto}
+            say={say}
+            dispatch={dispatch}
+          />
+        )}
+
+        {tab === "calendar" && <CalendarView state={state} today={today} onOpenPhoto={setViewerPhoto} />}
+
+        {tab === "settings" && (
+          <SettingsView state={state} today={today} fetching={fetching} onFetch={() => void fetchNow()} onRegister={() => void register()} dispatch={dispatch} say={say} />
+        )}
       </main>
 
-      {showAdd && (
-        <AddWizard beds={state.beds} plants={state.plants} today={today} dispatch={dispatch} onClose={() => setShowAdd(false)} />
+      <TabBar tab={tab} onChange={setTab} badges={{ home: todo }} />
+
+      {wizard !== false && (
+        <AddWizard beds={state.beds} plants={state.plants} today={today} initialBedId={typeof wizard === "string" ? wizard : null} dispatch={dispatch} onClose={() => setWizard(false)} />
       )}
-      {showHistory && <HistoryModal log={state.harvestLog} onClose={() => setShowHistory(false)} />}
-      {showCalendar && (
-        <CalendarModal
-          state={state}
-          today={today}
-          onOpenPhoto={(id) => {
-            setShowCalendar(false);
-            setAlbum(id);
-          }}
-          onClose={() => setShowCalendar(false)}
-        />
-      )}
-      {album !== false && (
-        <AlbumModal photos={state.photos} beds={state.beds} initialPhotoId={typeof album === "string" ? album : null} dispatch={dispatch} onClose={() => setAlbum(false)} />
+      {viewerPhoto && (
+        <PhotoViewer photos={sortedPhotos} startId={viewerPhoto} beds={state.beds} weatherLog={state.weatherLog} dispatch={dispatch} onClose={() => setViewerPhoto(null)} />
       )}
       <Toast message={toast} />
       {popupBadge && <BadgePopup badge={popupBadge} onClose={dismissBadge} />}

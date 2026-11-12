@@ -62,7 +62,7 @@ export function WeatherPanel({ weather, location, autoWeather, fetching, onFetch
                 transform: active ? "translateY(-2px)" : "none",
               }}
             >
-              <Icon size={18} color={active ? "#fff" : "rgba(255,255,255,.7)"} aria-hidden="true" />
+              <Icon size={18} color={active ? "var(--panel)" : "rgba(255,255,255,.7)"} aria-hidden="true" />
             </button>
           );
         })}
@@ -116,7 +116,7 @@ export function WeatherPanel({ weather, location, autoWeather, fetching, onFetch
             onClick={() => dispatch({ type: "setAutoWeather", on: !autoWeather })}
             style={styles.autoToggle}
           >
-            <span style={{ ...styles.toggleTrack, background: autoWeather ? "#7fb04f" : "rgba(255,255,255,.2)" }}>
+            <span style={{ ...styles.toggleTrack, background: autoWeather ? "var(--mint)" : "rgba(255,255,255,.2)" }}>
               <span style={{ ...styles.toggleKnob, transform: autoWeather ? "translateX(16px)" : "translateX(0)" }} />
             </span>
             <span style={styles.autoToggleLabel}>登録せずに毎回位置情報で取得</span>

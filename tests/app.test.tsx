@@ -21,6 +21,13 @@ const dismissPopups = () => {
   while (screen.queryByRole("dialog")) click("やったー！");
 };
 
+/** 「場所」タブ → 最初の場所 → 作物タブ */
+const openBedPlants = () => {
+  click("場所");
+  click(/を開く$/);
+  fireEvent.click(screen.getByRole("tab", { name: /作物/ }));
+};
+
 describe("そだてる庭", () => {
   it("初期表示でタイトルと空状態が出る", () => {
     render(<App />);
@@ -28,25 +35,42 @@ describe("そだてる庭", () => {
     expect(screen.getByText("まだ何も植えていません。")).toBeTruthy();
   });
 
+  it("メニュータブで画面が切り替わる", () => {
+    render(<App />);
+    click("カレンダー");
+    expect(screen.getByRole("grid")).toBeTruthy();
+    click("場所");
+    expect(screen.getByRole("button", { name: /プランターAを開く/ })).toBeTruthy();
+    click("設定");
+    expect(screen.getByRole("region", { name: "バックアップ" })).toBeTruthy();
+    click("ホーム");
+    expect(screen.getByText("まだ何も植えていません。")).toBeTruthy();
+  });
+
   it("ブルーベリーはティフブルー単独で「受粉相手が必要」、ホームベルを足すと両方「受粉相手がいます」＋縁結びバッジ", () => {
     render(<App />);
     plantBlueberry(/^ティフブルー/);
+    // 手が要る株はホームにも出る
     expect(screen.getByText("受粉相手が必要")).toBeTruthy();
     expect(screen.getByRole("region", { name: "受粉チェック" })).toBeTruthy();
     dismissPopups();
 
     plantBlueberry(/^ホームベル/);
-    expect(screen.getAllByText("受粉相手がいます")).toHaveLength(2);
-    expect(screen.queryByText("受粉相手が必要")).toBeNull();
     expect(screen.queryByRole("region", { name: "受粉チェック" })).toBeNull();
     expect(screen.getByRole("dialog", { name: /縁結び/ })).toBeTruthy();
+    dismissPopups();
+    // 解決した株は「場所」→ 作物タブで見る
+    openBedPlants();
+    expect(screen.getAllByText("受粉相手がいます")).toHaveLength(2);
+    expect(screen.queryByText("受粉相手が必要")).toBeNull();
   });
 
   it("気温の「＋」で21℃になる", () => {
     render(<App />);
-    expect(screen.getByText(/晴れ 20℃/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "今日の天気" }).textContent).toContain("晴れ 20℃");
+    click("今日の天気");
     click("気温を1℃上げる");
-    expect(screen.getByText(/晴れ 21℃/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "今日の天気" }).textContent).toContain("晴れ 21℃");
     expect((screen.getByLabelText("気温") as HTMLInputElement).value).toBe("21");
   });
 
@@ -54,10 +78,11 @@ describe("そだてる庭", () => {
     render(<App />);
     plantBlueberry(/^ティフブルー/);
     dismissPopups();
+    openBedPlants();
     click(/を片付ける/);
     expect(screen.getByText("受粉相手が必要")).toBeTruthy();
     click("本当に片付ける？");
-    expect(screen.getByText("まだ何も植えていません。")).toBeTruthy();
+    expect(screen.getByText("この場所にはまだ何も植えていません。")).toBeTruthy();
   });
 
   it("Escape でウィザードが閉じる", () => {
@@ -69,8 +94,9 @@ describe("そだてる庭", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("天気の自動取得トグルは role=switch", () => {
+  it("天気の自動取得トグルは role=switch（設定タブ）", () => {
     render(<App />);
+    click("設定");
     const sw = screen.getByRole("switch");
     expect(sw.getAttribute("aria-checked")).toBe("false");
     fireEvent.click(sw);

@@ -4,48 +4,50 @@ import type { GardenState } from "../types";
 import { dayInfo, loggedDays, monthGrid, plantEmoji, shiftMonth } from "../lib/calendar";
 import { stageLine } from "../lib/photos";
 import { CONDITION_EMOJI, conditionInfo } from "../lib/weather";
-import { PhotoThumb } from "./PhotoThumb";
 import { styles } from "../styles";
-import { Modal } from "./Modal";
+import { PhotoThumb } from "./PhotoThumb";
 
 interface Props {
   state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather" | "photos">;
   today: string;
   onOpenPhoto: (id: string) => void;
-  onClose: () => void;
 }
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const md = (date: string) => `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
 
-export function CalendarModal({ state, today, onOpenPhoto, onClose }: Props) {
+/** カレンダー。写真がある日はマス全体が写真（Instagram のアーカイブ風）。日を押すと詳細 */
+export function CalendarView({ state, today, onOpenPhoto }: Props) {
   const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
   const [picked, setPicked] = useState<string>(today);
   const cells = monthGrid(ym.year, ym.month);
   const info = dayInfo(state, picked, today);
   const logged = loggedDays(state.weatherLog, today);
+  const monthPhotos = state.photos.filter((p) => p.date.startsWith(`${ym.year}-${String(ym.month).padStart(2, "0")}`)).length;
 
   return (
-    <Modal title="📅 カレンダー" onClose={onClose}>
+    <section aria-label="カレンダー">
+      <div style={styles.eyebrow}>Archive</div>
       <div style={styles.calHead}>
         <button style={styles.calNav} aria-label="前の月" onClick={() => setYm(shiftMonth(ym.year, ym.month, -1))}>
           <ChevronLeft size={18} aria-hidden="true" />
         </button>
         <span style={styles.calMonth}>
           {ym.year}年{ym.month}月
+          {monthPhotos > 0 && <span style={{ ...styles.calNote, marginLeft: 8, fontFamily: "var(--mono)" }}>📷 {monthPhotos}</span>}
         </span>
         <button style={styles.calNav} aria-label="次の月" onClick={() => setYm(shiftMonth(ym.year, ym.month, 1))}>
           <ChevronRight size={18} aria-hidden="true" />
         </button>
       </div>
       <div style={styles.calNote}>
-        {logged > 0 ? `天気を${logged}日ぶん記録中。` : "位置情報で天気を取得すると、過去92日と16日先の予報が記録されます。"}
-        雨の日（{CONDITION_EMOJI.rainy}）は水やり扱いになります。
+        {logged > 0 ? `天気を${logged}日ぶん記録中。` : "庭の位置を登録すると天気が記録されます。"}
+        写真のある日はマスに表示。雨（{CONDITION_EMOJI.rainy}）は水やり扱い。
       </div>
 
       <div style={styles.calGrid} role="grid" aria-label={`${ym.year}年${ym.month}月`}>
         {WEEKDAYS.map((w, i) => (
-          <div key={w} style={{ ...styles.calWeekday, color: i === 0 ? "#c0432a" : i === 6 ? "#5b8aa6" : "#9aa089" }} role="columnheader">
+          <div key={w} style={{ ...styles.calWeekday, color: i === 0 ? "var(--flame-soft)" : i === 6 ? "var(--sky)" : "var(--dim)" }} role="columnheader">
             {w}
           </div>
         ))}
@@ -53,36 +55,52 @@ export function CalendarModal({ state, today, onOpenPhoto, onClose }: Props) {
           const d = dayInfo(state, c.date, today);
           const isToday = c.date === today;
           const active = c.date === picked;
+          const photo = d.photos[0];
           const marks = [
             d.care.some((e) => e.kind === "water") ? "💧" : "",
             d.waterDue.length > 0 && c.date >= today ? "🚰" : "",
             d.care.some((e) => e.kind === "feed") ? "🌱" : "",
             d.harvests.length > 0 ? "🧺" : "",
             d.planted.length > 0 ? "🌰" : "",
-            d.photos.length > 0 ? "📷" : "",
           ].filter(Boolean);
           return (
             <button
               key={c.date}
               role="gridcell"
               aria-selected={active}
-              aria-label={`${md(c.date)}${d.weather ? ` ${conditionInfo(d.weather.condition).label} ${d.weather.maxC}℃` : ""}`}
+              aria-label={`${md(c.date)}${d.weather ? ` ${conditionInfo(d.weather.condition).label} ${d.weather.maxC}℃` : ""}${photo ? " 写真あり" : ""}`}
               onClick={() => setPicked(c.date)}
+              className={photo ? "cal-photo-cell" : undefined}
               style={{
                 ...styles.calCell,
                 opacity: c.inMonth ? 1 : 0.35,
-                borderColor: active ? "#6b9d4f" : isToday ? "#c98b3a" : "#ece6d6",
-                background: active ? "#eef4e6" : d.forecast ? "#fbfaf5" : "#fff",
+                borderColor: active ? "var(--flame)" : isToday ? "var(--amber)" : "var(--line)",
+                background: photo ? "#000" : active ? "var(--panel-2)" : d.forecast ? "transparent" : "var(--panel)",
               }}
             >
-              <span style={{ ...styles.calDay, color: isToday ? "#c98b3a" : "#3d4a35" }}>{c.day}</span>
-              <span style={styles.calWx} aria-hidden="true">
-                {d.weather ? CONDITION_EMOJI[d.weather.condition] : ""}
-              </span>
-              <span style={styles.calTemp}>{d.weather ? `${d.weather.maxC}°` : ""}</span>
-              <span style={styles.calMarks} aria-hidden="true">
-                {marks.join("")}
-              </span>
+              {photo && (
+                <>
+                  <div style={styles.calPhotoBg}>
+                    <PhotoThumb id={photo.id} alt="" style={{ width: "100%", height: "100%", borderRadius: 0, border: "none" }} />
+                  </div>
+                  <div style={{ ...styles.calPhotoShade, zIndex: 0 }} />
+                </>
+              )}
+              <div style={styles.calCellInner}>
+                <span style={{ ...styles.calDay, color: isToday ? "var(--amber)" : photo ? "#fff" : "var(--text)" }}>{c.day}</span>
+                {!photo && (
+                  <>
+                    <span style={styles.calWx} aria-hidden="true">
+                      {d.weather ? CONDITION_EMOJI[d.weather.condition] : ""}
+                    </span>
+                    <span style={styles.calTemp}>{d.weather ? `${d.weather.maxC}°` : ""}</span>
+                  </>
+                )}
+                <span style={{ ...styles.calMarks, marginTop: "auto", color: "#fff" }} aria-hidden="true">
+                  {photo && d.photos.length > 1 ? `📷${d.photos.length}` : ""}
+                  {marks.join("")}
+                </span>
+              </div>
             </button>
           );
         })}
@@ -106,19 +124,32 @@ export function CalendarModal({ state, today, onOpenPhoto, onClose }: Props) {
             {info.weather.source === "manual" && <span style={styles.calManualTag}>手入力</span>}
           </div>
         ) : (
-          <div style={{ ...styles.calDetailRow, color: "#9aa089" }}>この日の天気の記録はありません</div>
+          <div style={{ ...styles.calDetailRow, color: "var(--dim)" }}>この日の天気の記録はありません</div>
+        )}
+        {info.photos.length > 0 && (
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
+            {info.photos.map((p) => (
+              <div key={p.id} style={{ flex: "0 0 auto", width: 120 }}>
+                <PhotoThumb id={p.id} alt={stageLine(p.stages)} style={{ width: 120, height: 120 }} onClick={() => onOpenPhoto(p.id)} />
+                <div style={{ ...styles.albumCap, marginTop: 3 }}>
+                  <div style={styles.albumDate}>{state.beds.find((b) => b.id === p.bedId)?.name ?? "（削除された場所）"}</div>
+                  <div style={styles.albumStage}>{p.stages.length ? p.stages.map((s) => `${s.day}日目`).join("・") : "植え付け前"}</div>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         {info.waterDue.length > 0 && (
           <div style={styles.calDetailRow}>
-            <Droplets size={14} color="#5b8aa6" aria-hidden="true" />
+            <Droplets size={14} color="var(--sky)" aria-hidden="true" />
             水やり{info.forecast ? "予定" : ""}：{info.waterDue.map((p) => `${plantEmoji(p)} ${p.projectName}`).join("、")}
           </div>
         )}
         {info.care.map((e) => (
           <div key={`${e.kind}-${e.label}`} style={styles.calDetailRow}>
-            {e.kind === "water" && <Droplets size={14} color="#5b8aa6" aria-hidden="true" />}
-            {e.kind === "feed" && <Leaf size={14} color="#6b9d4f" aria-hidden="true" />}
-            {e.kind === "refresh" && <RotateCcw size={14} color="#9c7a4a" aria-hidden="true" />}
+            {e.kind === "water" && <Droplets size={14} color="var(--sky)" aria-hidden="true" />}
+            {e.kind === "feed" && <Leaf size={14} color="var(--mint)" aria-hidden="true" />}
+            {e.kind === "refresh" && <RotateCcw size={14} color="var(--muted)" aria-hidden="true" />}
             {e.kind === "water" ? "水やり" : e.kind === "feed" ? "追肥" : "土替え"}：{e.label}
           </div>
         ))}
@@ -129,27 +160,10 @@ export function CalendarModal({ state, today, onOpenPhoto, onClose }: Props) {
         ))}
         {info.planted.map((p) => (
           <div key={p.uid} style={styles.calDetailRow}>
-            <Sprout size={14} color="#6b9d4f" aria-hidden="true" /> 植え付け：{plantEmoji(p)} {p.projectName}
+            <Sprout size={14} color="var(--mint)" aria-hidden="true" /> 植え付け：{plantEmoji(p)} {p.projectName}
           </div>
         ))}
-        {info.photos.length > 0 && (
-          <div style={{ ...styles.calDetailRow, alignItems: "flex-start" }}>
-            <span aria-hidden="true">📷</span>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {info.photos.map((p) => (
-                <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <PhotoThumb id={p.id} alt={stageLine(p.stages)} style={{ width: 56, height: 56 }} onClick={() => onOpenPhoto(p.id)} />
-                  <span>
-                    <b>{state.beds.find((b) => b.id === p.bedId)?.name ?? "（削除された場所）"}</b>
-                    <br />
-                    {stageLine(p.stages)}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
-    </Modal>
+    </section>
   );
 }

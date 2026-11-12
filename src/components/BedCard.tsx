@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, Beaker, Droplets, Leaf, Mountain, Plus, RotateCcw, X } from "lucide-react";
+import { AlertTriangle, Beaker, Droplets, Leaf, Mountain, RotateCcw, X } from "lucide-react";
 import type { Bed, Photo, Plant } from "../types";
 import type { Action } from "../lib/garden";
 import { findCrop, soilType } from "../data/catalog";
@@ -11,51 +11,6 @@ import { stageLine } from "../lib/photos";
 import { styles } from "../styles";
 import { PhotoCapture } from "./PhotoCapture";
 import { PhotoThumb } from "./PhotoThumb";
-
-interface Props {
-  beds: Bed[];
-  plants: Plant[];
-  photos: Photo[];
-  today: string;
-  say: (m: string) => void;
-  onOpenPhoto: (id: string) => void;
-  /** 追肥アラートから選ばれた場所。その場所の肥料選択を開く */
-  feedTarget: string | null;
-  onFeedTargetDone: () => void;
-  dispatch: (a: Action) => void;
-  onAdd: () => void;
-}
-
-export function BedSection({ beds, plants, photos, today, say, onOpenPhoto, feedTarget, onFeedTargetDone, dispatch, onAdd }: Props) {
-  return (
-    <section style={{ marginTop: 26 }}>
-      <div style={styles.sectionHead}>
-        <h2 style={styles.sectionTitle}>
-          <Mountain size={20} color="#9c7a4a" aria-hidden="true" /> 育てる場所の状態
-        </h2>
-        <button style={styles.histBtn} onClick={onAdd}>
-          <Plus size={16} aria-hidden="true" /> 場所を追加
-        </button>
-      </div>
-      <div style={styles.bedGrid}>
-        {beds.map((b) => (
-          <BedCard
-            key={b.id}
-            bed={b}
-            plants={plants.filter((p) => p.bedId === b.id)}
-            photos={photos.filter((p) => p.bedId === b.id)}
-            today={today}
-            say={say}
-            onOpenPhoto={onOpenPhoto}
-            openFeed={feedTarget === b.id}
-            onOpened={onFeedTargetDone}
-            dispatch={dispatch}
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
 
 type Picking = "soil" | "feed" | null;
 
@@ -71,7 +26,7 @@ interface CardProps {
   dispatch: (a: Action) => void;
 }
 
-function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpened, dispatch }: CardProps) {
+export function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpened, dispatch }: CardProps) {
   const [picking, setPicking] = useState<Picking>(null);
   useEffect(() => {
     if (openFeed) {
@@ -84,7 +39,7 @@ function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpe
   const growing = plants.length;
   const now = nutrientsOn(bed, growing, today);
   const h = soilHealth(now);
-  const accent = st.hasNutrient ? h.color : "#5b8aa6";
+  const accent = st.hasNutrient ? h.color : "var(--sky)";
   const overused = st.hasNutrient && bed.uses >= OVERUSE_THRESHOLD;
   const mix = findSoilMix(bed.soilMix);
   const feed = feedSchedule(bed, growing, today);
@@ -117,9 +72,9 @@ function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpe
       </div>
 
       <div style={styles.usesRow}>
-        <RotateCcw size={13} color="#9c7a4a" aria-hidden="true" />
+        <RotateCcw size={13} color="var(--muted)" aria-hidden="true" />
         <span>
-          ここで <b style={{ color: overused ? "#c0432a" : "#7a6a45" }}>{bed.uses}回</b> 連続栽培
+          ここで <b style={{ color: overused ? "var(--flame)" : "var(--muted)" }}>{bed.uses}回</b> 連続栽培
         </span>
         {overused && <span style={styles.usesWarn}>使いすぎ</span>}
       </div>
@@ -141,7 +96,7 @@ function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpe
       {st.hasNutrient ? (
         <>
           <div style={styles.soilMixRow}>
-            <Mountain size={13} color="#9c7a4a" aria-hidden="true" />
+            <Mountain size={13} color="var(--muted)" aria-hidden="true" />
             <span>土：{mix ? mix.name : "未設定"}</span>
             <button style={styles.soilMixLink} onClick={() => setPicking(picking === "soil" ? null : "soil")}>
               {mix ? "変更・入れ替え" : "使っている土を選ぶ"}
@@ -176,7 +131,7 @@ function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpe
                         {nut.label}
                         <span style={styles.npkRole}>（{nut.role}）</span>
                       </span>
-                      <span style={{ ...styles.npkVal, color: val < 30 ? "#c0432a" : "#7a6a45" }}>{val}</span>
+                      <span style={{ ...styles.npkVal, color: val < 30 ? "var(--flame)" : "var(--muted)" }}>{val}</span>
                     </div>
                     <div
                       style={styles.npkTrack}
@@ -200,9 +155,9 @@ function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpe
           <div
             style={{
               ...styles.feedBox,
-              color: feed.due ? "#c0432a" : "#5a6b4d",
-              background: feed.due ? "#fbe9e4" : "#f3f6ee",
-              borderColor: feed.due ? "#f0c9bf" : "#dfe6d3",
+              color: feed.due ? "var(--flame)" : "var(--muted)",
+              background: feed.due ? "var(--flame-bg)" : "var(--mint-bg)",
+              borderColor: feed.due ? "var(--line)" : "var(--line)",
             }}
           >
             <Leaf size={14} aria-hidden="true" style={{ flexShrink: 0 }} />
@@ -231,7 +186,7 @@ function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpe
       ) : (
         <>
           <div style={styles.hydroBox}>
-            <Droplets size={15} color="#5b8aa6" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }} />
+            <Droplets size={15} color="var(--sky)" aria-hidden="true" style={{ flexShrink: 0, marginTop: 3 }} />
             <span>
               培養液で栄養を管理します。土の栄養消費はありません。週1回ほど液を交換し、EC・pHを保つと安定します。
             </span>

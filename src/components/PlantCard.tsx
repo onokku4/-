@@ -22,7 +22,7 @@ export function PlantCard({ view, dispatch }: Props) {
   const perennial = crop.perennial === true;
 
   return (
-    <article style={{ ...styles.card, borderColor: urgent ? "#c0432a" : due ? "#d8a93f" : "#e3ddcf" }}>
+    <article style={{ ...styles.card, borderColor: urgent ? "var(--flame)" : due ? "var(--amber)" : "var(--line)" }}>
       <div style={styles.cardTop}>
         <div style={styles.cropEmoji} aria-hidden="true">
           {crop.emoji}
@@ -90,8 +90,8 @@ export function PlantCard({ view, dispatch }: Props) {
       <div
         style={{
           ...styles.waterStatus,
-          background: urgent ? "#fbe9e4" : due ? "#fdf4e0" : "#eef4e6",
-          color: urgent ? "#9c2e1a" : due ? "#8a6315" : "#4a6b3a",
+          background: urgent ? "var(--flame-bg)" : due ? "var(--amber-bg)" : "var(--mint-bg)",
+          color: urgent ? "var(--flame)" : due ? "var(--amber)" : "var(--mint)",
         }}
       >
         <Droplets size={15} aria-hidden="true" />
@@ -123,9 +123,9 @@ export function PlantCard({ view, dispatch }: Props) {
       </div>
 
       <div style={styles.tip}>
-        <Star size={13} color="#c98b3a" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
+        <Star size={13} color="var(--amber)" aria-hidden="true" style={{ flexShrink: 0, marginTop: 2 }} />
         <span>
-          <b style={{ color: "#8a6a3a" }}>{variety.name}：</b>
+          <b style={{ color: "var(--muted)" }}>{variety.name}：</b>
           {variety.tip}
         </span>
       </div>

@@ -70,8 +70,8 @@ export function StepVariety({ crop, plants, today, initialVarietyId, onSubmit, o
               onClick={() => setVarietyId(v.id)}
               style={{
                 ...styles.varCard,
-                borderColor: active ? "#6b9d4f" : "#e3ddcf",
-                background: active ? "#eef4e6" : "#fff",
+                borderColor: active ? "var(--mint)" : "var(--line)",
+                background: active ? "var(--mint-bg)" : "var(--panel)",
               }}
             >
               <span style={styles.varTop}>
