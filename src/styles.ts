@@ -59,6 +59,17 @@ export const styles = {
     background: "transparent", border: "none", color: "var(--muted)", fontWeight: 700, fontSize: 12.5, cursor: "pointer",
     display: "inline-flex", alignItems: "center", gap: 4, padding: "4px 0", marginBottom: 8,
   },
+  editBtn: {
+    background: "transparent", border: "1px solid var(--line)", borderRadius: 8, width: 30, height: 30, cursor: "pointer",
+    display: "inline-flex", alignItems: "center", justifyContent: "center", color: "var(--muted)", flexShrink: 0,
+  },
+  editField: { display: "flex", flexDirection: "column", gap: 4, fontSize: 11.5, fontWeight: 700, color: "var(--muted)" },
+  editInput: {
+    fontFamily: "var(--body)", fontSize: 14, padding: "8px 10px", borderRadius: 9, border: "1.5px solid var(--line)",
+    background: "var(--panel)", color: "var(--text)", width: "100%",
+  },
+  editBox: { background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 10 },
+  tempChip: { display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 7, padding: "2px 8px", fontSize: 11, fontWeight: 700 },
   /* list row（場所一覧） */
   bedRow: {
     boxShadow: "0 6px 18px rgba(120,110,80,.08)",
@@ -71,29 +82,31 @@ export const styles = {
   pill: {
     fontFamily: "var(--mono)", fontSize: 10, padding: "3px 7px", borderRadius: 5, letterSpacing: "0.06em", whiteSpace: "nowrap", fontWeight: 700,
   },
-  /* weather panel */
-  weatherBox: { display: "flex", flexDirection: "column", gap: 9, maxWidth: "100%" },
-  weatherLabel: { fontSize: 11, color: "rgba(255,255,255,.7)", letterSpacing: 1 },
+  /* weather panel（iPhone のウィジェット風） */
+  weatherBox: { display: "flex", flexDirection: "column", gap: 10, maxWidth: "100%" },
+  wxWidget: { borderRadius: 18, padding: "16px 18px 14px", color: "#fff", boxShadow: "0 10px 26px rgba(40,80,120,.25)" },
+  wxWidgetTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
+  wxPlace: { display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 700, opacity: 0.9 },
+  wxTemp: { fontSize: 64, fontWeight: 300, lineHeight: 1, letterSpacing: "-0.03em", marginTop: 2, fontVariantNumeric: "tabular-nums" },
+  wxDeg: { fontSize: 36, fontWeight: 300, verticalAlign: "top", marginLeft: 2 },
+  wxWidgetBottom: { display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 8, gap: 8, flexWrap: "wrap" },
+  wxCond: { fontSize: 14, fontWeight: 700 },
+  wxHiLo: { fontSize: 12.5, opacity: 0.9, fontVariantNumeric: "tabular-nums" },
   weatherBtn: {
     width: 38, height: 38, borderRadius: 10, border: "1.5px solid",
-    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-    transition: "all .18s", backdropFilter: "blur(4px)",
+    cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .18s",
   },
   tempBtn: {
-    width: 30, height: 30, borderRadius: 9, border: "1.5px solid rgba(255,255,255,.3)",
-    background: "rgba(255,255,255,.12)", color: "var(--on-accent)", cursor: "pointer",
+    width: 30, height: 30, borderRadius: 9, border: "1.5px solid var(--line)",
+    background: "var(--panel-2)", color: "var(--text)", cursor: "pointer",
     display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
   },
   tempInput: {
-    width: 56, height: 30, borderRadius: 9, border: "1.5px solid rgba(255,255,255,.3)",
+    width: 56, height: 30, borderRadius: 9, border: "1.5px solid var(--line)",
     background: "var(--panel)", color: "var(--text)", textAlign: "center",
     fontFamily: "var(--body)", fontWeight: 700, fontSize: 14,
   },
-  tempUnit: { color: "var(--on-accent)", fontWeight: 700, fontSize: 13 },
-  tempLabel: {
-    background: "rgba(255,255,255,.18)", color: "var(--on-accent)", borderRadius: 7,
-    padding: "2px 9px", fontSize: 11, fontWeight: 700,
-  },
+  tempUnit: { color: "var(--muted)", fontWeight: 700, fontSize: 13 },
   autoToggle: {
     display: "flex", alignItems: "center", gap: 7, background: "transparent",
     border: "none", cursor: "pointer", padding: 0,
@@ -105,22 +118,22 @@ export const styles = {
   toggleKnob: {
     position: "absolute", top: 2, left: 2, width: 14, height: 14, borderRadius: "50%",
     background: "var(--panel)", transition: "transform .2s", },
-  autoToggleLabel: { fontSize: 11.5, color: "rgba(255,255,255,.9)", fontWeight: 700 },
+  autoToggleLabel: { fontSize: 11.5, color: "var(--muted)", fontWeight: 700 },
   autoFetchBtn: {
-    background: "rgba(255,255,255,.16)", border: "1px solid rgba(255,255,255,.3)",
-    color: "var(--on-accent)", borderRadius: 9, padding: "5px 11px",
+    background: "var(--mint)", border: "none",
+    color: "#fff", borderRadius: 9, padding: "6px 12px",
     fontWeight: 700, fontSize: 11.5, cursor: "pointer", whiteSpace: "nowrap",
   },
-  autoInfo: { fontSize: 11.5, color: "rgba(255,255,255,.85)", fontWeight: 700 },
+  autoInfo: { fontSize: 11.5, color: "var(--muted)", fontWeight: 700 },
   adjustedChip: {
-    background: "var(--amber)", color: "var(--on-accent)", borderRadius: 7, padding: "1px 8px",
+    background: "var(--amber)", color: "#fff", borderRadius: 7, padding: "1px 8px",
     fontSize: 10.5, fontWeight: 700,
   },
   resetBtn: {
-    background: "transparent", border: "1px solid rgba(255,255,255,.4)", color: "var(--on-accent)",
+    background: "transparent", border: "1px solid var(--line)", color: "var(--muted)",
     borderRadius: 8, padding: "3px 9px", fontWeight: 700, fontSize: 11, cursor: "pointer",
   },
-  autoNote: { fontSize: 10, color: "rgba(255,255,255,.6)" },
+  autoNote: { fontSize: 10.5, color: "var(--dim)", lineHeight: 1.5 },
   main: { maxWidth: 1100, margin: "0 auto", padding: "26px 22px" },
   /* status */
   levelCard: {

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Droplets, Star, Sun, Trash2 } from "lucide-react";
+import { Check, Droplets, Pencil, Star, Sun, Thermometer, Trash2, X } from "lucide-react";
+import type { Bed } from "../types";
 import type { Action } from "../lib/garden";
 import { localDate } from "../lib/date";
-import { soilType } from "../data/catalog";
+import { canGrowIn, soilType } from "../data/catalog";
 import { formatMonths } from "../ui/format";
 import { newId } from "../ui/id";
 import { styles } from "../styles";
@@ -11,13 +12,25 @@ import type { PlantView } from "./plantView";
 
 interface Props {
   view: PlantView;
+  /** 移動先の候補（省略時は移動できない） */
+  beds?: Bed[];
   dispatch: (a: Action) => void;
 }
 
-export function PlantCard({ view, dispatch }: Props) {
+export function PlantCard({ view, beds, dispatch }: Props) {
   const { plant, bed, status, diagnosis } = view;
-  const { crop, variety, due, urgent, interval, daysSinceWater, growthPct, byRain } = status;
+  const { crop, variety, due, urgent, interval, daysSinceWater, growthPct, byRain, temp } = status;
   const [confirmingRemove, setConfirmingRemove] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({ name: plant.projectName, date: plant.plantedDate, bedId: plant.bedId });
+  const startEdit = () => {
+    setDraft({ name: plant.projectName, date: plant.plantedDate, bedId: plant.bedId });
+    setEditing(true);
+  };
+  const saveEdit = () => {
+    dispatch({ type: "editPlant", uid: plant.uid, projectName: draft.name, plantedDate: draft.date, bedId: draft.bedId });
+    setEditing(false);
+  };
   const soil = bed ? soilType(bed.type) : undefined;
   const perennial = crop.perennial === true;
 
@@ -44,6 +57,9 @@ export function PlantCard({ view, dispatch }: Props) {
             )}
           </div>
         </div>
+        <button style={styles.editBtn} aria-label={`${plant.projectName}を編集`} title="名前・植え付け日・場所を編集" onClick={startEdit}>
+          <Pencil size={14} aria-hidden="true" />
+        </button>
         <button
           style={styles.iconBtn}
           title={perennial ? "収穫を記録" : "収穫する"}
@@ -52,6 +68,54 @@ export function PlantCard({ view, dispatch }: Props) {
         >
           <span aria-hidden="true">🧺</span>
         </button>
+      </div>
+
+      {editing && (
+        <div style={styles.editBox} role="group" aria-label="株の編集">
+          <label style={styles.editField}>
+            名前
+            <input style={styles.editInput} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} aria-label="株の名前" />
+          </label>
+          <label style={styles.editField}>
+            植え付け日
+            <input type="date" style={styles.editInput} value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} aria-label="植え付け日" />
+          </label>
+          {beds && beds.length > 1 && (
+            <label style={styles.editField}>
+              場所
+              <select style={styles.editInput} value={draft.bedId} onChange={(e) => setDraft({ ...draft, bedId: e.target.value })} aria-label="場所">
+                {beds.map((b) => (
+                  <option key={b.id} value={b.id} disabled={!canGrowIn(crop, b.type)}>
+                    {soilType(b.type).emoji} {b.name}
+                    {!canGrowIn(crop, b.type) ? "（育てられない）" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+            <button style={styles.histBtn} onClick={() => setEditing(false)}>
+              <X size={14} aria-hidden="true" /> やめる
+            </button>
+            <button style={styles.addBtn} onClick={saveEdit}>
+              <Check size={14} aria-hidden="true" /> 保存
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        <span
+          style={{
+            ...styles.tempChip,
+            background: temp.kind === "ok" ? "var(--mint-bg)" : temp.kind === "hot" ? "var(--flame-bg)" : "var(--sky-bg)",
+            color: temp.kind === "ok" ? "var(--mint)" : temp.kind === "hot" ? "var(--flame)" : "var(--sky)",
+          }}
+          title={`適温 ${temp.range.min}〜${temp.range.max}℃`}
+        >
+          <Thermometer size={11} aria-hidden="true" /> {temp.label}
+          <span style={{ opacity: 0.7, fontWeight: 400 }}>（適温 {temp.range.min}〜{temp.range.max}℃）</span>
+        </span>
       </div>
 
       {growthPct !== null ? (

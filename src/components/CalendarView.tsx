@@ -5,6 +5,7 @@ import { dayInfo, loggedDays, monthGrid, plantEmoji, shiftMonth } from "../lib/c
 import { stageLine } from "../lib/photos";
 import { CONDITION_EMOJI, conditionInfo } from "../lib/weather";
 import { styles } from "../styles";
+import { DayModal } from "./DayModal";
 import { PhotoThumb } from "./PhotoThumb";
 
 interface Props {
@@ -20,6 +21,7 @@ const md = (date: string) => `${Number(date.slice(5, 7))}月${Number(date.slice(
 export function CalendarView({ state, today, onOpenPhoto }: Props) {
   const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
   const [picked, setPicked] = useState<string>(today);
+  const [open, setOpen] = useState<string | null>(null);
   const cells = monthGrid(ym.year, ym.month);
   const info = dayInfo(state, picked, today);
   const logged = loggedDays(state.weatherLog, today);
@@ -42,7 +44,7 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
       </div>
       <div style={styles.calNote}>
         {logged > 0 ? `天気を${logged}日ぶん記録中。` : "庭の位置を登録すると天気が記録されます。"}
-        写真のある日はマスに表示。雨（{CONDITION_EMOJI.rainy}）は水やり扱い。
+        写真のある日はマスに表示。日を押すとその日の詳細。🌡️ は気温が合わなかった日。
       </div>
 
       <div style={styles.calGrid} role="grid" aria-label={`${ym.year}年${ym.month}月`}>
@@ -62,6 +64,7 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
             d.care.some((e) => e.kind === "feed") ? "🌱" : "",
             d.harvests.length > 0 ? "🧺" : "",
             d.planted.length > 0 ? "🌰" : "",
+            d.tempIssues.length > 0 ? "🌡️" : "",
           ].filter(Boolean);
           return (
             <button
@@ -69,7 +72,10 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
               role="gridcell"
               aria-selected={active}
               aria-label={`${md(c.date)}${d.weather ? ` ${conditionInfo(d.weather.condition).label} ${d.weather.maxC}℃` : ""}${photo ? " 写真あり" : ""}`}
-              onClick={() => setPicked(c.date)}
+              onClick={() => {
+                setPicked(c.date);
+                setOpen(c.date);
+              }}
               className={photo ? "cal-photo-cell" : undefined}
               style={{
                 ...styles.calCell,
@@ -139,6 +145,12 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
             ))}
           </div>
         )}
+        {info.tempIssues.length > 0 && (
+          <div style={styles.calDetailRow}>
+            <span aria-hidden="true">🌡️</span>
+            {info.tempIssues.map((t) => `${t.plant.projectName}：${t.verdict.label}`).join("、")}
+          </div>
+        )}
         {info.waterDue.length > 0 && (
           <div style={styles.calDetailRow}>
             <Droplets size={14} color="var(--sky)" aria-hidden="true" />
@@ -164,6 +176,7 @@ export function CalendarView({ state, today, onOpenPhoto }: Props) {
           </div>
         ))}
       </div>
+      {open && <DayModal state={state} date={open} today={today} onOpenPhoto={onOpenPhoto} onClose={() => setOpen(null)} />}
     </section>
   );
 }

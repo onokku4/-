@@ -19,7 +19,12 @@ const pct = (v: unknown): number => Math.min(100, Math.max(0, num(v, 100)));
 const SOILS: readonly SoilTypeId[] = ["planter", "field", "hydro"];
 const isSoil = (v: unknown): v is SoilTypeId => SOILS.includes(v as SoilTypeId);
 const isCondition = (v: unknown): v is Condition => CONDITIONS.some((c) => c.id === v);
-const isBadge = (v: unknown): v is BadgeId => BADGES.some((b) => b.id === v);
+const isBadge = (v: unknown): v is BadgeId => {
+  if (typeof v !== "string") return false;
+  if (BADGES.some((b) => b.id === v)) return true;
+  const m = /^crop(10)?:(.+)$/.exec(v);
+  return m !== null && findCrop(m[2]!) !== undefined;
+};
 
 const toBed = (r: Raw): Bed | undefined =>
   typeof r.id === "string"

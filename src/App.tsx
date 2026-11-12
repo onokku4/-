@@ -22,6 +22,7 @@ import type { PlantView } from "./components/plantView";
 import { PollinationAlert } from "./components/PollinationAlert";
 import { SettingsView } from "./components/SettingsView";
 import { StatusBar } from "./components/StatusBar";
+import { TempAlert } from "./components/TempAlert";
 import { TabBar, type Tab } from "./components/TabBar";
 import { Toast } from "./components/Toast";
 import { WaterAlert } from "./components/WaterAlert";
@@ -67,7 +68,7 @@ export function App() {
   const todo = due.length + feedDue.length;
   // ホームは「手を入れる株」だけ。全部は「場所」タブの作物タブで見る
   const attention = useMemo(
-    () => views.filter((v) => v.status.due || v.status.frostRisk || v.diagnosis?.verdict === "ng" || v.diagnosis?.verdict === "action"),
+    () => views.filter((v) => v.status.due || v.status.frostRisk || v.status.temp.kind !== "ok" || v.diagnosis?.verdict === "ng" || v.diagnosis?.verdict === "action"),
     [views],
   );
 
@@ -92,13 +93,14 @@ export function App() {
           <>
             {showWeather && (
               <div style={{ ...styles.notifyCard, display: "block", marginBottom: 14 }}>
-                <WeatherPanel weather={state.weather} location={state.location} autoWeather={state.autoWeather} fetching={fetching} onFetch={() => void fetchNow()} onRegister={() => void register()} dispatch={dispatch} />
+                <WeatherPanel weather={state.weather} location={state.location} todayLog={state.weatherLog[today]} autoWeather={state.autoWeather} fetching={fetching} onFetch={() => void fetchNow()} onRegister={() => void register()} dispatch={dispatch} />
               </div>
             )}
             <div style={styles.eyebrow}>Today</div>
             <StatusBar xp={state.xp} streak={state.streak} waterCount={state.waterCount} plantCount={state.plants.length} />
             <WaterAlert due={due} weatherLabel={conditionInfo(state.weather.current.condition).label} dispatch={dispatch} />
             <FeedAlert due={feedDue} onPick={goFeed} />
+            <TempAlert views={views} tempC={state.weather.current.tempC} />
             <PollinationAlert views={views} />
             {todo === 0 && state.plants.length > 0 && <div style={{ ...styles.alertBox, borderColor: "rgba(61,220,151,.4)", borderLeftColor: "var(--mint)" }}>✅ 今日やることはありません。</div>}
 
@@ -130,7 +132,7 @@ export function App() {
             ) : (
               <div style={styles.grid}>
                 {attention.map((v) => (
-                  <PlantCard key={v.plant.uid} view={v} dispatch={dispatch} />
+                  <PlantCard key={v.plant.uid} view={v} beds={state.beds} dispatch={dispatch} />
                 ))}
               </div>
             )}

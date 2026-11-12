@@ -54,6 +54,8 @@ export interface Crop {
   soils?: SoilTypeId[];
   /** 酸性土が必須（ブルーベリーなど） */
   acidSoil?: true;
+  /** 生育適温。省略時は lib/temperature.ts のカテゴリ既定 */
+  tempRange?: TempRange;
   varieties: [Variety, ...Variety[]];
 }
 
@@ -160,7 +162,7 @@ export interface GardenLocation {
   registeredAt: string;
 }
 
-export type BadgeId =
+export type StaticBadgeId =
   | "first"
   | "water10"
   | "streak7"
@@ -169,6 +171,16 @@ export type BadgeId =
   | "green"
   | "fruit"
   | "matchmaker";
+
+/** 作物ごとの実績。`crop:<cropId>` は初収穫、`crop10:<cropId>` は10回収穫 */
+export type CropBadgeId = `crop:${string}` | `crop10:${string}`;
+export type BadgeId = StaticBadgeId | CropBadgeId;
+
+/** 生育に向く気温の範囲（℃）。省略時はカテゴリの既定 */
+export interface TempRange {
+  min: number;
+  max: number;
+}
 
 export interface GardenState {
   plants: Plant[];

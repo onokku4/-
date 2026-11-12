@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Pencil, X } from "lucide-react";
 import { Camera, ChevronLeft, ChevronRight, Images, Leaf, Plus, Sprout } from "lucide-react";
 import type { Bed, GardenState } from "../types";
 import type { Action } from "../lib/garden";
@@ -98,6 +99,12 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
   const bedViews = views.filter((v) => v.plant.bedId === bed.id);
   const photos = [...state.photos.filter((p) => p.bedId === bed.id)].sort((a, b) => b.date.localeCompare(a.date));
   const st = soilType(bed.type);
+  const [renaming, setRenaming] = useState(false);
+  const [nameDraft, setNameDraft] = useState(bed.name);
+  const saveName = () => {
+    dispatch({ type: "renameBed", bedId: bed.id, name: nameDraft });
+    setRenaming(false);
+  };
 
   return (
     <section aria-label={bed.name}>
@@ -107,9 +114,37 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
       <div style={styles.sectionHead}>
         <div>
           <div style={styles.eyebrow}>{st.label}</div>
-          <h2 style={styles.sectionTitle}>
-            {st.emoji} {bed.name}
-          </h2>
+          {renaming ? (
+            <form
+              style={{ display: "flex", gap: 6, alignItems: "center" }}
+              onSubmit={(e) => {
+                e.preventDefault();
+                saveName();
+              }}
+            >
+              <input style={{ ...styles.editInput, width: 180 }} value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} aria-label="場所の名前" autoFocus />
+              <button type="submit" style={styles.editBtn} aria-label="名前を保存">
+                <Check size={14} aria-hidden="true" />
+              </button>
+              <button type="button" style={styles.editBtn} aria-label="名前の編集をやめる" onClick={() => setRenaming(false)}>
+                <X size={14} aria-hidden="true" />
+              </button>
+            </form>
+          ) : (
+            <h2 style={{ ...styles.sectionTitle, gap: 6 }}>
+              {st.emoji} {bed.name}
+              <button
+                style={styles.editBtn}
+                aria-label="場所の名前を編集"
+                onClick={() => {
+                  setNameDraft(bed.name);
+                  setRenaming(true);
+                }}
+              >
+                <Pencil size={13} aria-hidden="true" />
+              </button>
+            </h2>
+          )}
         </div>
         <button style={styles.addBtn} onClick={() => onPlant(bed.id)}>
           <Plus size={16} aria-hidden="true" /> ここに植える
@@ -145,7 +180,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
         ) : (
           <div style={styles.grid}>
             {bedViews.map((v) => (
-              <PlantCard key={v.plant.uid} view={v} dispatch={dispatch} />
+              <PlantCard key={v.plant.uid} view={v} beds={state.beds} dispatch={dispatch} />
             ))}
           </div>
         ))}

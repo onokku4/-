@@ -26,7 +26,7 @@ export function SettingsView({ state, today, fetching, onFetch, onRegister, disp
       <div>
         <div style={styles.eyebrow}>Weather</div>
         <div style={{ ...styles.notifyCard, display: "block" }}>
-          <WeatherPanel weather={state.weather} location={state.location} autoWeather={state.autoWeather} fetching={fetching} onFetch={onFetch} onRegister={onRegister} dispatch={dispatch} />
+          <WeatherPanel weather={state.weather} location={state.location} todayLog={state.weatherLog[today]} autoWeather={state.autoWeather} fetching={fetching} onFetch={onFetch} onRegister={onRegister} dispatch={dispatch} />
         </div>
       </div>
       <div>

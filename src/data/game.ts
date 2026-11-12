@@ -1,4 +1,4 @@
-import type { BadgeId } from "../types";
+import type { BadgeId, Crop, CropBadgeId } from "../types";
 
 export interface Level {
   lv: number;
@@ -39,6 +39,14 @@ export const BADGES: readonly Badge[] = [
   { id: "fruit", name: "果樹園のはじまり", emoji: "🍋", desc: "はじめて果樹・ベリーを植えた" },
   { id: "matchmaker", name: "縁結び", emoji: "🐝", desc: "受粉相手が必要な品種にパートナーを揃えた" },
 ];
+
+/** 作物ごとの実績（初収穫・10回収穫）。カタログから生成する */
+export const cropBadges = (crop: Crop): readonly (Badge & { id: CropBadgeId; cropId: string })[] => [
+  { id: `crop:${crop.id}`, cropId: crop.id, name: `${crop.name}の初収穫`, emoji: crop.emoji, desc: `${crop.name}をはじめて収穫した` },
+  { id: `crop10:${crop.id}`, cropId: crop.id, name: `${crop.name}の達人`, emoji: crop.emoji, desc: `${crop.name}を10回収穫した` },
+];
+
+export const CROP_BADGE_HARVESTS = 10;
 
 export const XP = { plant: 15, water: 8, harvest: 30, refresh: 10, feed: 10, photo: 5 } as const;
 export const GREEN_THUMB_XP = 350;

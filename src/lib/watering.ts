@@ -1,6 +1,7 @@
 import type { Bed, Crop, Plant, Variety, WeatherLog, WeatherReading } from "../types";
 import { resolve, soilType } from "../data/catalog";
 import { daysBetween } from "./date";
+import { tempVerdict, type TempVerdict } from "./temperature";
 import { RAIN_AS_WATER_MM, weatherMultiplier } from "./weather";
 
 export interface PlantStatus {
@@ -24,6 +25,8 @@ export interface PlantStatus {
   byRain: boolean;
   /** 次に水やりが必要になる日（YYYY-MM-DD）。due なら今日 */
   nextDue: string;
+  /** 今の気温が適温か */
+  temp: TempVerdict;
 }
 
 const addDays = (date: string, n: number): string => new Date(Date.parse(date) + n * 86_400_000).toISOString().slice(0, 10);
@@ -73,6 +76,7 @@ export function plantStatus(
     lastWatered: last.date,
     byRain: last.byRain,
     nextDue: daysSinceWater >= interval ? today : addDays(last.date, interval),
+    temp: tempVerdict(crop, weather.tempC),
   };
 }
 

@@ -37,6 +37,7 @@ src/lib/                純粋関数。React にも現在時刻にも依存し�
   calendar.ts           月のマス目と、日ごとの天気・世話・水やり予定・写真
   photos.ts             成長記録（植え付けから何日目）の計算と並べ替え
   backup.ts             バックアップ形式（封筒・検証・ファイル名）
+  temperature.ts        作物ごとの適温と、今日／過去の日の暑すぎ・寒すぎ判定
   date.ts               ローカル日付
 src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バッジ）
 src/ui/photoStore.ts    写真本体の IndexedDB 保存と端末内縮小（長辺1280px JPEG）
@@ -47,6 +48,8 @@ src/components/         表示のみ。計算は lib を呼ぶ
   CalendarView          写真がある日はマスが写真（Instagram アーカイブ風）
   PhotoViewer           全画面・横スワイプ（scroll-snap）でページ送り
   SettingsView          天気の位置・通知・バックアップ・履歴・バッジ
+  DayModal              カレンダーの日を押したときの「その日のデータ」（株ごとの何日目・気温・水やり・写真）
+  WeatherPanel          iPhone のウィジェット風の天気（大きな気温・天気ごとの空色）と調整・位置登録
 tests/                  lib の単体テスト + 画面の統合テスト
 legacy/garden.jsx       移行前の単一ファイル版（参照用。編集しない）
 ```
@@ -68,6 +71,9 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 土の栄養（n/p/k）は「記録日 `nutrientsAt` 時点の値」。今日の値は `nutrientsOn()` で導出し、保存値を変える操作（収穫・追肥）の前に経過ぶんを反映する。
 - 天気は `weatherLog`（日付→天気）に溜める。自動取得は手入力の日を上書きしない。十分な雨（地植え5mm・鉢10mm）は水やり扱い（`lastWaterOrRain`）。
 - 写真は本体を IndexedDB（`ui/photoStore.ts`）、メタ情報（場所・日付・何日目・メモ）を `photos` に分けて持つ。`stages` は撮影時点のスナップショットで、株を片付けても残す。
+- 適温は `crop.tempRange`、なければ `TEMP_BY_CATEGORY`。落葉果樹・ベリーの寒さは休眠として扱い、`coldTenderBelowC` がある作物だけ寒さを出す。
+- 実績は固定の `BADGES` ＋ 作物ごとの `crop:<id>`（初収穫）/ `crop10:<id>`（10回収穫）。`award()` が収穫履歴から数える。
+- 名前・植え付け日・場所は `editPlant` / `renameBed` で後から直せる。
 - アプリは土の成分を**測れない**。`soils.ts` の値は一般的な目安で、袋の表示が優先。
 
 ## 作物を足すとき

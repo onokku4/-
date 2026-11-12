@@ -1,6 +1,7 @@
 import type { Bed, CareEvent, DailyWeather, GardenState, HarvestRecord, Photo, Plant } from "../types";
 import { resolve } from "../data/catalog";
 import { daysBetween } from "./date";
+import { dayTempIssues, type DayTempIssue } from "./temperature";
 import { plantStatus } from "./watering";
 
 export interface CalendarCell {
@@ -39,6 +40,8 @@ export interface DayInfo {
   /** この日に水やりが必要になる株（今日以降のみ） */
   waterDue: Plant[];
   photos: Photo[];
+  /** その日の最高・最低気温で、暑すぎ／寒すぎだった株 */
+  tempIssues: DayTempIssue[];
 }
 
 /**
@@ -59,6 +62,7 @@ export const dayInfo = (state: Pick<GardenState, "plants" | "beds" | "harvestLog
     care: state.careLog.filter((c) => c.date === date),
     waterDue,
     photos: state.photos.filter((p) => p.date === date),
+    tempIssues: weather ? dayTempIssues(state.plants, weather, date) : [],
   };
 };
 

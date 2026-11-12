@@ -1,6 +1,6 @@
 import type { BadgeId, Bed, CareEvent, GardenState, Plant, SoilTypeId, WeatherLog, WeatherReading } from "../types";
 import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilType, varietyOf } from "../data/catalog";
-import { GREEN_THUMB_XP, XP } from "../data/game";
+import { CROP_BADGE_HARVESTS, GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
 import { diagnose } from "./pollination";
 import { growthStages } from "./photos";
@@ -13,6 +13,8 @@ export type Action =
   | { type: "water"; uid: string; today: string }
   | { type: "harvest"; uid: string; recordId: string; today: string }
   | { type: "remove"; uid: string }
+  | { type: "editPlant"; uid: string; projectName?: string; plantedDate?: string; bedId?: string }
+  | { type: "renameBed"; bedId: string; name: string }
   | { type: "addBed"; id: string; soil: SoilTypeId; name?: string; soilMix?: string; today: string }
   | { type: "refreshBed"; bedId: string; today: string; soilMix?: string }
   | { type: "feedBed"; bedId: string; fertilizer: string; today: string }
@@ -89,6 +91,14 @@ const award = (before: GardenState, after: GardenState, extra: BadgeId[] = []): 
   if (after.harvestLog.length > 0) earned.push("harvest");
   if (after.xp >= GREEN_THUMB_XP) earned.push("green");
   if (after.plants.some((p) => findCrop(p.cropId)?.perennial)) earned.push("fruit");
+  // 作物ごと：初収穫と10回収穫
+  const counts = new Map<string, number>();
+  for (const h of after.harvestLog) counts.set(h.cropId, (counts.get(h.cropId) ?? 0) + 1);
+  for (const [cropId, n] of counts) {
+    if (!findCrop(cropId)) continue;
+    earned.push(`crop:${cropId}`);
+    if (n >= CROP_BADGE_HARVESTS) earned.push(`crop10:${cropId}`);
+  }
   const newBadges = [...new Set(earned)].filter((b) => !before.earnedBadges.includes(b));
   return {
     state: newBadges.length ? { ...after, earnedBadges: [...after.earnedBadges, ...newBadges] } : after,
@@ -177,6 +187,28 @@ export function apply(s: GardenState, a: Action): Outcome {
       const plant = s.plants.find((p) => p.uid === a.uid);
       if (!plant) return quiet(s);
       return { state: { ...s, plants: s.plants.filter((p) => p.uid !== a.uid) }, newBadges: [], toast: `「${plant.projectName}」を片付けました` };
+    }
+
+    case "editPlant": {
+      const plant = s.plants.find((p) => p.uid === a.uid);
+      if (!plant) return quiet(s);
+      const r = resolve(plant);
+      const bed = a.bedId !== undefined ? s.beds.find((b) => b.id === a.bedId) : undefined;
+      if (a.bedId !== undefined && (!bed || !r || !canGrowIn(r.crop, bed.type))) {
+        return { ...quiet(s), toast: bed && r ? `${r.crop.name}は${soilType(bed.type).label}では育てられません` : "その場所はありません" };
+      }
+      const name = a.projectName === undefined ? plant.projectName : a.projectName.trim() || (r ? defaultProjectName(r.crop, r.variety) : plant.projectName);
+      const plantedDate = a.plantedDate !== undefined && /^\d{4}-\d{2}-\d{2}$/.test(a.plantedDate) ? a.plantedDate : plant.plantedDate;
+      const next: Plant = { ...plant, projectName: name, plantedDate, bedId: bed?.id ?? plant.bedId };
+      if (next.projectName === plant.projectName && next.plantedDate === plant.plantedDate && next.bedId === plant.bedId) return quiet(s);
+      return { state: { ...s, plants: s.plants.map((p) => (p.uid === a.uid ? next : p)) }, newBadges: [], toast: `✏️ 「${next.projectName}」を更新しました` };
+    }
+
+    case "renameBed": {
+      const bed = s.beds.find((b) => b.id === a.bedId);
+      const name = a.name.trim();
+      if (!bed || !name || name === bed.name) return quiet(s);
+      return { state: { ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, name } : b)) }, newBadges: [], toast: `✏️ 「${name}」に変更しました` };
     }
 
     case "addBed": {
