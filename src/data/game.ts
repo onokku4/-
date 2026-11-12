@@ -40,5 +40,5 @@ export const BADGES: readonly Badge[] = [
   { id: "matchmaker", name: "縁結び", emoji: "🐝", desc: "受粉相手が必要な品種にパートナーを揃えた" },
 ];
 
-export const XP = { plant: 15, water: 8, harvest: 30, refresh: 10, feed: 10 } as const;
+export const XP = { plant: 15, water: 8, harvest: 30, refresh: 10, feed: 10, photo: 5 } as const;
 export const GREEN_THUMB_XP = 350;

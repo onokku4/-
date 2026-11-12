@@ -2,20 +2,23 @@ import { useState } from "react";
 import { ChevronLeft, ChevronRight, CloudRain, Droplets, Leaf, RotateCcw, Sprout } from "lucide-react";
 import type { GardenState } from "../types";
 import { dayInfo, loggedDays, monthGrid, plantEmoji, shiftMonth } from "../lib/calendar";
+import { stageLine } from "../lib/photos";
 import { CONDITION_EMOJI, conditionInfo } from "../lib/weather";
+import { PhotoThumb } from "./PhotoThumb";
 import { styles } from "../styles";
 import { Modal } from "./Modal";
 
 interface Props {
-  state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather">;
+  state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather" | "photos">;
   today: string;
+  onOpenPhoto: (id: string) => void;
   onClose: () => void;
 }
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const md = (date: string) => `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
 
-export function CalendarModal({ state, today, onClose }: Props) {
+export function CalendarModal({ state, today, onOpenPhoto, onClose }: Props) {
   const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
   const [picked, setPicked] = useState<string>(today);
   const cells = monthGrid(ym.year, ym.month);
@@ -56,6 +59,7 @@ export function CalendarModal({ state, today, onClose }: Props) {
             d.care.some((e) => e.kind === "feed") ? "🌱" : "",
             d.harvests.length > 0 ? "🧺" : "",
             d.planted.length > 0 ? "🌰" : "",
+            d.photos.length > 0 ? "📷" : "",
           ].filter(Boolean);
           return (
             <button
@@ -128,6 +132,23 @@ export function CalendarModal({ state, today, onClose }: Props) {
             <Sprout size={14} color="#6b9d4f" aria-hidden="true" /> 植え付け：{plantEmoji(p)} {p.projectName}
           </div>
         ))}
+        {info.photos.length > 0 && (
+          <div style={{ ...styles.calDetailRow, alignItems: "flex-start" }}>
+            <span aria-hidden="true">📷</span>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {info.photos.map((p) => (
+                <div key={p.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                  <PhotoThumb id={p.id} alt={stageLine(p.stages)} style={{ width: 56, height: 56 }} onClick={() => onOpenPhoto(p.id)} />
+                  <span>
+                    <b>{state.beds.find((b) => b.id === p.bedId)?.name ?? "（削除された場所）"}</b>
+                    <br />
+                    {stageLine(p.stages)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </Modal>
   );

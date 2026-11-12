@@ -3,6 +3,7 @@ import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilTy
 import { GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
 import { diagnose } from "./pollination";
+import { growthStages } from "./photos";
 import { afterHarvest, fed, newBed, refreshed } from "./soil";
 import { DEFAULT_WEATHER, adjust, applyAuto, manualDaily, mergeLog, resetToAuto } from "./weather";
 
@@ -18,6 +19,9 @@ export type Action =
   | { type: "weatherAuto"; reading: WeatherReading; fetchedAt: string; daily?: WeatherLog }
   | { type: "weatherBackfill"; daily: WeatherLog }
   | { type: "setLocation"; lat: number; lon: number; today: string }
+  | { type: "addPhoto"; id: string; bedId: string; date: string; note: string; today: string }
+  | { type: "removePhoto"; id: string }
+  | { type: "setPhotoNote"; id: string; note: string }
   | { type: "clearLocation" }
   | { type: "weatherAdjust"; patch: Partial<WeatherReading>; today: string }
   | { type: "weatherReset"; today: string }
@@ -45,6 +49,7 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
   weatherLog: {},
   careLog: [],
   location: null,
+  photos: [],
   autoWeather: false,
   notifyOn: false,
   notifyTime: "07:00",
@@ -201,6 +206,17 @@ export function apply(s: GardenState, a: Action): Outcome {
 
     case "weatherAuto":
       return quiet({ ...s, weather: applyAuto(a.reading, a.fetchedAt), weatherLog: mergeLog(s.weatherLog, a.daily ?? {}) });
+    case "addPhoto": {
+      const bed = s.beds.find((b) => b.id === a.bedId);
+      if (!bed || s.photos.some((p) => p.id === a.id)) return quiet(s);
+      const photo = { id: a.id, bedId: a.bedId, date: a.date, note: a.note.trim(), stages: growthStages(s.plants, a.bedId, a.date) };
+      const next = cared({ ...s, photos: [...s.photos, photo] }, XP.photo, a.today);
+      return { ...award(s, next), toast: `📷 「${bed.name}」の様子を記録しました +${XP.photo}XP` };
+    }
+    case "removePhoto":
+      return s.photos.some((p) => p.id === a.id) ? { state: { ...s, photos: s.photos.filter((p) => p.id !== a.id) }, newBadges: [], toast: "写真を削除しました" } : quiet(s);
+    case "setPhotoNote":
+      return quiet({ ...s, photos: s.photos.map((p) => (p.id === a.id ? { ...p, note: a.note.trim() } : p)) });
     case "weatherBackfill":
       return quiet({ ...s, weatherLog: mergeLog(s.weatherLog, a.daily) });
     case "setLocation":

@@ -1,4 +1,4 @@
-import type { Bed, CareEvent, DailyWeather, GardenState, HarvestRecord, Plant } from "../types";
+import type { Bed, CareEvent, DailyWeather, GardenState, HarvestRecord, Photo, Plant } from "../types";
 import { resolve } from "../data/catalog";
 import { daysBetween } from "./date";
 import { plantStatus } from "./watering";
@@ -38,13 +38,14 @@ export interface DayInfo {
   care: CareEvent[];
   /** この日に水やりが必要になる株（今日以降のみ） */
   waterDue: Plant[];
+  photos: Photo[];
 }
 
 /**
  * その日の天気と出来事。
  * 水やり予定は「最後に水を得た日＋今日の天気で補正した間隔」（作物カードと同じ計算）。期限切れの株は今日に寄せる
  */
-export const dayInfo = (state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather">, date: string, today: string): DayInfo => {
+export const dayInfo = (state: Pick<GardenState, "plants" | "beds" | "harvestLog" | "careLog" | "weatherLog" | "weather" | "photos">, date: string, today: string): DayInfo => {
   const weather = state.weatherLog[date];
   const bedOf = (p: Plant): Bed | undefined => state.beds.find((b) => b.id === p.bedId);
   const waterDue =
@@ -57,6 +58,7 @@ export const dayInfo = (state: Pick<GardenState, "plants" | "beds" | "harvestLog
     harvests: state.harvestLog.filter((h) => h.harvestDate === date),
     care: state.careLog.filter((c) => c.date === date),
     waterDue,
+    photos: state.photos.filter((p) => p.date === date),
   };
 };
 

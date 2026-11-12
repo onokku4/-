@@ -34,9 +34,11 @@ src/lib/                純粋関数。React にも現在時刻にも依存し�
   weather.ts            天気区分・気温補正・位置情報からの自動取得（過去92日＋予報16日の日別も取得）
   soil.ts               NPK と連用回数。nutrientsOn（日数経過での減り）、fed（追肥）、feedSchedule（次の追肥日）
   storage.ts            localStorage 読み書き + normalize（旧形式・壊れた値の救済）
-  calendar.ts           月のマス目と、日ごとの天気・世話・水やり予定
+  calendar.ts           月のマス目と、日ごとの天気・世話・水やり予定・写真
+  photos.ts             成長記録（植え付けから何日目）の計算と並べ替え
   date.ts               ローカル日付
 src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バッジ）
+src/ui/photoStore.ts    写真本体の IndexedDB 保存と端末内縮小（長辺1280px JPEG）
 src/components/         表示のみ。計算は lib を呼ぶ
 tests/                  lib の単体テスト + 画面の統合テスト
 legacy/garden.jsx       移行前の単一ファイル版（参照用。編集しない）
@@ -51,6 +53,7 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 保存形式を変えたら `storage.ts` の `normalize` と往復テストを更新する。
 - 土の栄養（n/p/k）は「記録日 `nutrientsAt` 時点の値」。今日の値は `nutrientsOn()` で導出し、保存値を変える操作（収穫・追肥）の前に経過ぶんを反映する。
 - 天気は `weatherLog`（日付→天気）に溜める。自動取得は手入力の日を上書きしない。十分な雨（地植え5mm・鉢10mm）は水やり扱い（`lastWaterOrRain`）。
+- 写真は本体を IndexedDB（`ui/photoStore.ts`）、メタ情報（場所・日付・何日目・メモ）を `photos` に分けて持つ。`stages` は撮影時点のスナップショットで、株を片付けても残す。
 - アプリは土の成分を**測れない**。`soils.ts` の値は一般的な目安で、袋の表示が優先。
 
 ## 作物を足すとき
@@ -91,4 +94,5 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 配信先は https か localhost が必須（Service Worker の制約）。`base: "./"` なのでサブディレクトリ配信でも動く。
 - 天気の記録：通常取得は過去92日＋予報16日。庭の位置を登録していれば、植え付け日（収穫済みの株も含む）以降の欠けを archive API で埋める（`backfillRange`）。
 - 土の種類・肥料の持続日数は一般的な目安。製品ごとの差は反映していない。
-- 候補: 連作障害の警告、収穫量の記録とグラフ、写真・メモ、データの書き出し/読み込み。
+- 写真はこの端末の IndexedDB にだけある。別端末では「画像なし」になり、ブラウザのサイトデータ削除で消える。
+- 候補: 連作障害の警告、収穫量の記録とグラフ、データの書き出し/読み込み（写真込み）。

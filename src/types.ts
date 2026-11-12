@@ -137,6 +137,22 @@ export interface WeatherState {
   auto: (WeatherReading & { fetchedAt: string }) | null;
 }
 
+/** 撮影時点の「植え付けから何日目」。株ごとに残す（後で株を片付けても写真の説明が消えないように） */
+export interface GrowthStage {
+  label: string;
+  emoji: string;
+  day: number;
+}
+
+/** 成長記録の写真。画像本体は IndexedDB（ui/photoStore.ts）に id で保存し、ここにはメタ情報だけ持つ */
+export interface Photo {
+  id: string;
+  bedId: string;
+  date: string;
+  note: string;
+  stages: GrowthStage[];
+}
+
 /** 登録した庭の位置。約1km（小数2桁）に丸めてから保存する */
 export interface GardenLocation {
   lat: number;
@@ -168,6 +184,7 @@ export interface GardenState {
   careLog: CareEvent[];
   /** 登録済みなら、位置情報の許可なしにこの座標で天気を取る */
   location: GardenLocation | null;
+  photos: Photo[];
   autoWeather: boolean;
   notifyOn: boolean;
   notifyTime: string; // HH:MM

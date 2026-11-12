@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, History, Plus, Sprout } from "lucide-react";
+import { CalendarDays, History, Images, Plus, Sprout } from "lucide-react";
 import { BADGES } from "./data/game";
 import { diagnose } from "./lib/pollination";
 import { feedSchedule } from "./lib/soil";
@@ -12,6 +12,7 @@ import { useWaterNotify } from "./hooks/useWaterNotify";
 import { styles } from "./styles";
 import { AddWizard } from "./components/AddWizard";
 import { BadgeGrid } from "./components/BadgeGrid";
+import { AlbumModal } from "./components/AlbumModal";
 import { BadgePopup } from "./components/BadgePopup";
 import { CalendarModal } from "./components/CalendarModal";
 import { BedSection } from "./components/BedSection";
@@ -32,6 +33,8 @@ export function App() {
   const [showAdd, setShowAdd] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
+  /** アルバムを開く。文字列なら、その写真を最初に大きく表示 */
+  const [album, setAlbum] = useState<false | true | string>(false);
   const [feedTarget, setFeedTarget] = useState<string | null>(null);
   const { fetching, fetchNow, register } = useAutoWeather(state, dispatch, say);
 
@@ -82,7 +85,10 @@ export function App() {
         <BedSection
           beds={state.beds}
           plants={state.plants}
+          photos={state.photos}
           today={today}
+          say={say}
+          onOpenPhoto={setAlbum}
           feedTarget={feedTarget}
           onFeedTargetDone={() => setFeedTarget(null)}
           dispatch={dispatch}
@@ -97,6 +103,9 @@ export function App() {
             <div style={styles.btnRow}>
               <button style={styles.histBtn} onClick={() => setShowCalendar(true)}>
                 <CalendarDays size={16} aria-hidden="true" /> カレンダー
+              </button>
+              <button style={styles.histBtn} onClick={() => setAlbum(true)}>
+                <Images size={16} aria-hidden="true" /> アルバム{state.photos.length > 0 ? `(${state.photos.length})` : ""}
               </button>
               <button style={styles.histBtn} onClick={() => setShowHistory(true)}>
                 <History size={16} aria-hidden="true" /> 履歴{state.harvestLog.length > 0 ? `(${state.harvestLog.length})` : ""}
@@ -135,7 +144,20 @@ export function App() {
         <AddWizard beds={state.beds} plants={state.plants} today={today} dispatch={dispatch} onClose={() => setShowAdd(false)} />
       )}
       {showHistory && <HistoryModal log={state.harvestLog} onClose={() => setShowHistory(false)} />}
-      {showCalendar && <CalendarModal state={state} today={today} onClose={() => setShowCalendar(false)} />}
+      {showCalendar && (
+        <CalendarModal
+          state={state}
+          today={today}
+          onOpenPhoto={(id) => {
+            setShowCalendar(false);
+            setAlbum(id);
+          }}
+          onClose={() => setShowCalendar(false)}
+        />
+      )}
+      {album !== false && (
+        <AlbumModal photos={state.photos} beds={state.beds} initialPhotoId={typeof album === "string" ? album : null} dispatch={dispatch} onClose={() => setAlbum(false)} />
+      )}
       <Toast message={toast} />
       {popupBadge && <BadgePopup badge={popupBadge} onClose={dismissBadge} />}
     </div>

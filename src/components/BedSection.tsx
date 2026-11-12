@@ -1,18 +1,24 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, Beaker, Droplets, Leaf, Mountain, Plus, RotateCcw, X } from "lucide-react";
-import type { Bed, Plant } from "../types";
+import type { Bed, Photo, Plant } from "../types";
 import type { Action } from "../lib/garden";
 import { findCrop, soilType } from "../data/catalog";
 import { FERTILIZERS } from "../data/fertilizers";
 import { SOIL_MIXES, findSoilMix } from "../data/soils";
 import { localDate } from "../lib/date";
 import { NUTRIENTS, OVERUSE_THRESHOLD, acidMismatch, feedSchedule, nutrientsOn, soilHealth } from "../lib/soil";
+import { stageLine } from "../lib/photos";
 import { styles } from "../styles";
+import { PhotoCapture } from "./PhotoCapture";
+import { PhotoThumb } from "./PhotoThumb";
 
 interface Props {
   beds: Bed[];
   plants: Plant[];
+  photos: Photo[];
   today: string;
+  say: (m: string) => void;
+  onOpenPhoto: (id: string) => void;
   /** 追肥アラートから選ばれた場所。その場所の肥料選択を開く */
   feedTarget: string | null;
   onFeedTargetDone: () => void;
@@ -20,7 +26,7 @@ interface Props {
   onAdd: () => void;
 }
 
-export function BedSection({ beds, plants, today, feedTarget, onFeedTargetDone, dispatch, onAdd }: Props) {
+export function BedSection({ beds, plants, photos, today, say, onOpenPhoto, feedTarget, onFeedTargetDone, dispatch, onAdd }: Props) {
   return (
     <section style={{ marginTop: 26 }}>
       <div style={styles.sectionHead}>
@@ -37,7 +43,10 @@ export function BedSection({ beds, plants, today, feedTarget, onFeedTargetDone, 
             key={b.id}
             bed={b}
             plants={plants.filter((p) => p.bedId === b.id)}
+            photos={photos.filter((p) => p.bedId === b.id)}
             today={today}
+            say={say}
+            onOpenPhoto={onOpenPhoto}
             openFeed={feedTarget === b.id}
             onOpened={onFeedTargetDone}
             dispatch={dispatch}
@@ -53,13 +62,16 @@ type Picking = "soil" | "feed" | null;
 interface CardProps {
   bed: Bed;
   plants: Plant[];
+  photos: Photo[];
   today: string;
+  say: (m: string) => void;
+  onOpenPhoto: (id: string) => void;
   openFeed: boolean;
   onOpened: () => void;
   dispatch: (a: Action) => void;
 }
 
-function BedCard({ bed, plants, today, openFeed, onOpened, dispatch }: CardProps) {
+function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpened, dispatch }: CardProps) {
   const [picking, setPicking] = useState<Picking>(null);
   useEffect(() => {
     if (openFeed) {
@@ -110,6 +122,20 @@ function BedCard({ bed, plants, today, openFeed, onOpened, dispatch }: CardProps
           ここで <b style={{ color: overused ? "#c0432a" : "#7a6a45" }}>{bed.uses}回</b> 連続栽培
         </span>
         {overused && <span style={styles.usesWarn}>使いすぎ</span>}
+      </div>
+
+      <div style={styles.photoStrip}>
+        {[...photos].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 3).map((p) => (
+          <PhotoThumb key={p.id} id={p.id} alt={`${p.date} ${stageLine(p.stages)}`} style={{ width: 52, height: 52 }} onClick={() => onOpenPhoto(p.id)} />
+        ))}
+        {photos.length > 3 && (
+          <button style={styles.photoStripMore} onClick={() => onOpenPhoto(photos[photos.length - 1]!.id)}>
+            ほか{photos.length - 3}枚
+          </button>
+        )}
+        <span style={{ marginLeft: "auto" }}>
+          <PhotoCapture bedId={bed.id} dispatch={dispatch} say={say} compact={photos.length > 0} />
+        </span>
       </div>
 
       {st.hasNutrient ? (
