@@ -1,28 +1,28 @@
-/* CREW OS 系の配色トークン。暗い地にパネル、アクセントは炎色・ミント・琥珀 */
+/* 配色トークン。生成りの地に白いパネル、アクセントは緑・琥珀・水色。構造（タブ・パネル）は CREW OS 準拠 */
 :root {
-  --ground: #08090c;
-  --panel: #12141b;
-  --panel-2: #171a23;
-  --line: #262b36;
-  --text: #eef1f6;
-  --muted: #8b93a3;
-  --dim: #59606f;
-  --flame: #ff5b2e;
-  --flame-soft: #ff7a52;
-  --mint: #3ddc97;
-  --amber: #f5b942;
-  --sky: #5aa9e6;
-  --on-accent: #0b0d12;
-  --mint-bg: rgba(61, 220, 151, 0.1);
-  --flame-bg: rgba(255, 91, 46, 0.12);
-  --amber-bg: rgba(245, 185, 66, 0.12);
-  --sky-bg: rgba(90, 169, 230, 0.12);
+  --ground: #f7f3e9;
+  --panel: #ffffff;
+  --panel-2: #faf7ee;
+  --line: #e3ddcf;
+  --text: #3d4a35;
+  --muted: #7a6a45;
+  --dim: #9aa089;
+  --flame: #c0432a;
+  --flame-soft: #d2603a;
+  --mint: #6b9d4f;
+  --amber: #c98b3a;
+  --sky: #5b8aa6;
+  --on-accent: #ffffff;
+  --mint-bg: #eef4e6;
+  --flame-bg: #fbe9e4;
+  --amber-bg: #fdf4e0;
+  --sky-bg: #eef5f8;
 
-  --display: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", "Meiryo", system-ui, sans-serif;
-  --body: "Hiragino Kaku Gothic ProN", "Yu Gothic Medium", "Yu Gothic", "Noto Sans JP", "Meiryo", system-ui, sans-serif;
+  --display: "Yuji Syuku", serif;
+  --body: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   --tabbar: 64px;
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 * {
@@ -63,7 +63,6 @@ button:disabled {
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
   cursor: pointer;
-  filter: invert(0.8);
 }
 
 @keyframes sway {

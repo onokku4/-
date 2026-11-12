@@ -4,7 +4,7 @@ import type { CSSProperties } from "react";
 export const styles = {
   page: {
     minHeight: "100vh",
-    background: "radial-gradient(120% 60% at 50% -10%, #14161d 0%, var(--ground) 60%)",
+    background: "radial-gradient(circle at 15% 0%, #f4efe2 0%, transparent 45%), radial-gradient(circle at 90% 10%, #eaf0df 0%, transparent 40%), var(--ground)",
     fontFamily: "var(--body)",
     color: "var(--text)",
     paddingBottom: "calc(var(--tabbar) + 24px + env(safe-area-inset-bottom))",
@@ -12,7 +12,7 @@ export const styles = {
   /* header */
   header: {
     position: "sticky", top: 0, zIndex: 20,
-    background: "rgba(8,9,12,.82)", backdropFilter: "blur(10px)",
+    background: "rgba(247,243,233,.88)", backdropFilter: "blur(10px)",
     borderBottom: "1px solid var(--line)",
   },
   headerInner: {
@@ -20,19 +20,21 @@ export const styles = {
     display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12,
   },
   brand: { display: "flex", alignItems: "center", gap: 10 },
-  brandMark: { display: "flex", alignItems: "flex-end", gap: 3, height: 26 },
-  brandBar: { width: 6, borderRadius: 2 },
-  brandTitle: { margin: 0, fontFamily: "var(--display)", fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text)", lineHeight: 1 },
-  brandSub: { margin: "3px 0 0", fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.22em", color: "var(--flame-soft)", textTransform: "uppercase" },
+  brandMark: {
+    width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg, #4a6b3a, #3a5630)",
+    display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+  },
+  brandTitle: { margin: 0, fontFamily: "var(--display)", fontSize: 20, fontWeight: 400, letterSpacing: 1, color: "#3a5630", lineHeight: 1 },
+  brandSub: { margin: "3px 0 0", fontFamily: "var(--mono)", fontSize: 9, letterSpacing: "0.22em", color: "var(--amber)", textTransform: "uppercase" },
   headerWx: { display: "flex", alignItems: "center", gap: 8, fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)", whiteSpace: "nowrap" },
   eyebrow: {
     fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.22em", textTransform: "uppercase",
-    color: "var(--flame-soft)", display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
+    color: "var(--amber)", display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
   },
   /* tab bar */
   tabBar: {
     position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 30,
-    background: "rgba(12,14,20,.92)", backdropFilter: "blur(12px)", borderTop: "1px solid var(--line)",
+    background: "rgba(255,255,255,.92)", backdropFilter: "blur(12px)", borderTop: "1px solid var(--line)",
     paddingBottom: "env(safe-area-inset-bottom)",
   },
   tabBarInner: { maxWidth: 560, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(4, 1fr)" },
@@ -43,7 +45,7 @@ export const styles = {
   },
   tabBadge: {
     position: "absolute", top: 9, right: "calc(50% - 20px)", minWidth: 16, height: 16, borderRadius: 8,
-    background: "var(--flame)", color: "var(--on-accent)", fontFamily: "var(--mono)", fontSize: 10, fontWeight: 700,
+    background: "var(--flame)", color: "#fff", fontFamily: "var(--mono)", fontSize: 10, fontWeight: 700,
     display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px",
   },
   /* sub tabs（場所の詳細など） */
@@ -59,10 +61,11 @@ export const styles = {
   },
   /* list row（場所一覧） */
   bedRow: {
+    boxShadow: "0 6px 18px rgba(120,110,80,.08)",
     width: "100%", textAlign: "left", background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 14,
     padding: "14px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 12, color: "var(--text)",
   },
-  bedRowName: { fontSize: 15, fontWeight: 900, letterSpacing: "-0.01em" },
+  bedRowName: { fontFamily: "var(--display)", fontSize: 17 },
   bedRowMeta: { fontSize: 11.5, color: "var(--muted)", marginTop: 3, lineHeight: 1.5 },
   bedRowPlants: { fontSize: 18, letterSpacing: -2, marginTop: 4 },
   pill: {
@@ -121,21 +124,23 @@ export const styles = {
   main: { maxWidth: 1100, margin: "0 auto", padding: "26px 22px" },
   /* status */
   levelCard: {
+    boxShadow: "0 6px 18px rgba(120,110,80,.08)",
     background: "var(--panel)", borderRadius: 18, padding: "18px 20px",
     border: "1px solid var(--line)",
   },
   levelTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
-  levelLv: { fontFamily: "var(--mono)", fontWeight: 700, fontSize: 28, color: "var(--text)", lineHeight: 1 },
+  levelLv: { fontFamily: "var(--display)", fontSize: 30, color: "var(--text)", lineHeight: 1 },
   levelTitle: { fontSize: 13, color: "var(--muted)", marginTop: 4, fontWeight: 700 },
   xpTrack: { height: 10, background: "var(--line)", borderRadius: 6, marginTop: 14, overflow: "hidden" },
   xpFill: { height: "100%", background: "linear-gradient(90deg,var(--mint),var(--amber))", borderRadius: 6, transition: "width .5s" },
   xpText: { fontSize: 11.5, color: "var(--muted)", marginTop: 6 },
   miniStat: {
+    boxShadow: "0 6px 18px rgba(120,110,80,.08)",
     background: "var(--panel)", borderRadius: 18, padding: "16px 10px",
     border: "1px solid var(--line)", textAlign: "center",
     display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
   },
-  miniNum: { fontFamily: "var(--mono)", fontWeight: 700, fontSize: 24, color: "var(--text)", lineHeight: 1 },
+  miniNum: { fontFamily: "var(--display)", fontSize: 26, color: "var(--text)", lineHeight: 1 },
   miniLabel: { fontSize: 10.5, color: "var(--muted)", fontWeight: 700 },
   /* alerts */
   alertBox: {
@@ -148,7 +153,7 @@ export const styles = {
     border: "1px solid var(--line)", borderRadius: 10, padding: "8px 14px",
     fontWeight: 700, fontSize: 13, cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
   },
-  urgentTag: { fontFamily: "var(--mono)", fontSize: 10, background: "rgba(0,0,0,.25)", padding: "1px 6px", borderRadius: 5 },
+  urgentTag: { fontSize: 10, background: "rgba(255,255,255,.25)", padding: "1px 6px", borderRadius: 6 },
   pollAlert: {
     background: "var(--panel)", border: "1px solid rgba(245,185,66,.4)", borderLeft: "3px solid var(--amber)", borderRadius: 14,
     padding: "14px 16px", marginBottom: 14,
@@ -159,12 +164,13 @@ export const styles = {
   pollAlertSuggest: { fontSize: 11.5, color: "var(--muted)", margin: "2px 0 0", paddingLeft: 18 },
   /* section */
   sectionHead: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, gap: 10, flexWrap: "wrap" },
-  sectionTitle: { fontFamily: "var(--display)", fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text)", margin: 0, display: "flex", alignItems: "center", gap: 8 },
+  sectionTitle: { fontFamily: "var(--display)", fontSize: 20, fontWeight: 400, color: "#3a5630", margin: 0, display: "flex", alignItems: "center", gap: 8 },
   btnRow: { display: "flex", gap: 8 },
   addBtn: {
-    background: "var(--flame)", color: "var(--on-accent)", border: "none", borderRadius: 11,
+    background: "var(--mint)", color: "#fff", border: "none", borderRadius: 11,
     padding: "9px 16px", fontWeight: 700, fontSize: 13.5,
     cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+    boxShadow: "0 4px 12px rgba(107,157,79,.35)",
   },
   histBtn: {
     background: "var(--panel)", color: "var(--muted)", border: "1px solid var(--line)", borderRadius: 11,
@@ -256,6 +262,7 @@ export const styles = {
     },
   /* notify */
   notifyCard: {
+    boxShadow: "0 6px 18px rgba(120,110,80,.08)",
     background: "var(--panel)", borderRadius: 18, padding: "16px 20px", border: "1px solid var(--line)", display: "flex", alignItems: "center",
     justifyContent: "space-between", gap: 14, flexWrap: "wrap",
   },
@@ -275,10 +282,11 @@ export const styles = {
   /* beds */
   bedGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(290px,100%),1fr))", gap: 16 },
   bedCard: {
+    boxShadow: "0 6px 18px rgba(120,110,80,.08)",
     background: "var(--panel)", borderRadius: 18, padding: 18, border: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 13,
   },
   bedHead: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
-  bedName: { fontFamily: "var(--display)", fontSize: 16, fontWeight: 900, letterSpacing: "-0.01em", color: "var(--text)" },
+  bedName: { fontFamily: "var(--display)", fontSize: 18, fontWeight: 400, color: "var(--text)" },
   bedSub: { fontSize: 11, color: "var(--muted)", marginTop: 2 },
   bedHealthBadge: { color: "var(--on-accent)", borderRadius: 8, padding: "4px 10px", fontSize: 11.5, fontWeight: 700, whiteSpace: "nowrap" },
   usesRow: {
@@ -352,18 +360,20 @@ export const styles = {
   empty: { textAlign: "center", padding: "44px 20px", background: "var(--panel)", borderRadius: 18, border: "1px dashed var(--line)" },
   emptyText: { color: "var(--muted)", marginBottom: 16 },
   addBtnBig: {
-    background: "var(--flame)", color: "var(--on-accent)", border: "none", borderRadius: 12,
+    background: "var(--mint)", color: "#fff", border: "none", borderRadius: 12,
     padding: "12px 22px", fontWeight: 700, fontSize: 14.5,
     cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7,
+    boxShadow: "0 4px 14px rgba(107,157,79,.35)",
   },
   /* plant card */
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(min(270px,100%),1fr))", gap: 16 },
   card: {
+    boxShadow: "0 6px 18px rgba(120,110,80,.08)",
     background: "var(--panel)", borderRadius: 18, padding: 18, border: "1px solid var(--line)", display: "flex", flexDirection: "column", gap: 12,
   },
   cardTop: { display: "flex", alignItems: "center", gap: 12 },
   cropEmoji: { fontSize: 38, lineHeight: 1 },
-  cropName: { margin: 0, fontFamily: "var(--display)", fontSize: 16, fontWeight: 900, letterSpacing: "-0.01em", color: "var(--text)", overflowWrap: "anywhere" },
+  cropName: { margin: 0, fontFamily: "var(--display)", fontSize: 18, fontWeight: 400, color: "var(--text)", overflowWrap: "anywhere" },
   cropMeta: { fontSize: 11, color: "var(--muted)", display: "flex", alignItems: "center", gap: 4, marginTop: 3, flexWrap: "wrap" },
   iconBtn: {
     width: 38, height: 38, borderRadius: 10, border: "1px solid var(--line)",
@@ -423,7 +433,7 @@ export const styles = {
   /* calendar */
   calHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
   calNav: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--text)" },
-  calMonth: { fontFamily: "var(--display)", fontSize: 17, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text)" },
+  calMonth: { fontFamily: "var(--display)", fontSize: 20, color: "#3a5630" },
   calNote: { fontSize: 11, color: "var(--muted)", lineHeight: 1.5, marginBottom: 10 },
   calGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 },
   calWeekday: { textAlign: "center", fontSize: 10.5, fontWeight: 700, padding: "2px 0" },
@@ -435,14 +445,14 @@ export const styles = {
   calPhotoBg: { position: "absolute", inset: 0, zIndex: 0 },
   calPhotoShade: { position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,0) 45%, rgba(0,0,0,.45) 100%)" },
   /* photo viewer */
-  viewer: { position: "fixed", inset: 0, zIndex: 80, background: "#000", display: "flex", flexDirection: "column", color: "var(--text)" },
+  viewer: { position: "fixed", inset: 0, zIndex: 80, background: "#1d2419", display: "flex", flexDirection: "column", color: "var(--text)" },
   viewerTop: { display: "flex", alignItems: "center", justifyContent: "space-between", padding: "calc(10px + env(safe-area-inset-top)) 12px 8px", gap: 8 },
-  viewerCounter: { fontFamily: "var(--mono)", fontSize: 12, color: "var(--muted)" },
-  viewerBtn: { background: "rgba(255,255,255,.08)", border: "1px solid var(--line)", color: "var(--text)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
+  viewerCounter: { fontFamily: "var(--mono)", fontSize: 12, color: "rgba(255,255,255,.75)" },
+  viewerBtn: { background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.25)", color: "#fff", borderRadius: 10, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
   viewerImg: { maxWidth: "100%", maxHeight: "100%", objectFit: "contain", display: "block" },
   viewerCap: { padding: "10px 16px calc(14px + env(safe-area-inset-bottom))", borderTop: "1px solid var(--line)", background: "var(--panel)", display: "flex", flexDirection: "column", gap: 6 },
-  viewerDate: { fontFamily: "var(--mono)", fontSize: 12, color: "var(--flame-soft)", letterSpacing: "0.06em" },
-  viewerStage: { fontSize: 14, fontWeight: 900, letterSpacing: "-0.01em" },
+  viewerDate: { fontFamily: "var(--mono)", fontSize: 12, color: "var(--amber)", letterSpacing: "0.06em" },
+  viewerStage: { fontFamily: "var(--display)", fontSize: 16 },
   viewerMeta: { fontSize: 11.5, color: "var(--muted)", display: "flex", gap: 10, flexWrap: "wrap" },
   viewerDots: { display: "flex", gap: 4, justifyContent: "center", padding: "6px 0 0" },
   calDay: { fontSize: 12, fontWeight: 700, lineHeight: 1 },
@@ -489,14 +499,14 @@ export const styles = {
   albumStage: { color: "var(--mint)", fontWeight: 700 },
   /* modal */
   modalOverlay: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,.6)", backdropFilter: "blur(3px)",
+    position: "fixed", inset: 0, background: "rgba(45,55,38,.55)", backdropFilter: "blur(3px)",
     display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 50,
   },
   modal: {
-    background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 18, padding: 20, maxWidth: 560, width: "100%",
+    background: "var(--ground)", borderRadius: 22, padding: 22, maxWidth: 560, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.3)",
     maxHeight: "88vh", overflowY: "auto", },
   modalHead: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 },
-  modalTitle: { fontFamily: "var(--display)", fontSize: 18, fontWeight: 900, letterSpacing: "-0.02em", color: "var(--text)", margin: 0 },
+  modalTitle: { fontFamily: "var(--display)", fontSize: 22, color: "#3a5630", margin: 0 },
   closeBtn: { background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 10, width: 36, height: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" },
   /* toast */
   toastWrap: {
@@ -504,16 +514,16 @@ export const styles = {
     padding: "0 16px", pointerEvents: "none", zIndex: 60,
   },
   toast: {
-    background: "var(--panel-2)", color: "var(--text)", border: "1px solid var(--line)", padding: "12px 20px", borderRadius: 12,
+    background: "#3a5630", color: "#fff", padding: "13px 24px", borderRadius: 14, boxShadow: "0 10px 30px rgba(0,0,0,.3)",
     fontWeight: 700, fontSize: 14, animation: "toastIn .3s ease", maxWidth: "100%", textAlign: "center", lineHeight: 1.5,
   },
   /* badge popup */
   popupOverlay: {
-    position: "fixed", inset: 0, background: "rgba(0,0,0,.65)", backdropFilter: "blur(4px)",
+    position: "fixed", inset: 0, background: "rgba(45,55,38,.6)", backdropFilter: "blur(4px)",
     display: "flex", alignItems: "center", justifyContent: "center", zIndex: 70, padding: 16,
   },
   popupCard: {
-    background: "var(--panel)", borderRadius: 24, padding: "32px 36px",
+    background: "linear-gradient(160deg,#fffdf6,#f3ecd9)", borderRadius: 24, padding: "32px 36px",
     textAlign: "center", border: "1px solid var(--line)",
     animation: "popIn .4s ease", maxWidth: 320,
   },

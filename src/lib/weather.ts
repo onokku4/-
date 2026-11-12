@@ -1,11 +1,11 @@
 import type { Condition, DailyWeather, GardenLocation, WeatherLog, WeatherReading, WeatherState } from "../types";
 
 export const CONDITIONS: readonly { id: Condition; label: string; mult: number; color: string }[] = [
-  { id: "sunny", label: "晴れ", mult: 1.0, color: "#f5b942" },
-  { id: "cloudy", label: "くもり", mult: 1.3, color: "#8b93a3" },
-  { id: "rainy", label: "雨", mult: 2.5, color: "#5aa9e6" },
-  { id: "snowy", label: "雪", mult: 2.5, color: "#9cc6ea" },
-  { id: "windy", label: "強風", mult: 0.85, color: "#7fb8a0" },
+  { id: "sunny", label: "晴れ", mult: 1.0, color: "#e0a32e" },
+  { id: "cloudy", label: "くもり", mult: 1.3, color: "#9aa5ad" },
+  { id: "rainy", label: "雨", mult: 2.5, color: "#5b8aa6" },
+  { id: "snowy", label: "雪", mult: 2.5, color: "#7fa8c9" },
+  { id: "windy", label: "強風", mult: 0.85, color: "#88a08a" },
 ];
 
 export const conditionInfo = (id: Condition) => CONDITIONS.find((c) => c.id === id) ?? CONDITIONS[0]!;

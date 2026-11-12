@@ -25,7 +25,7 @@ export function TabBar({ tab, onChange, badges = {} }: Props) {
           const active = id === tab;
           const n = badges[id] ?? 0;
           return (
-            <button key={id} style={{ ...styles.tabBtn, color: active ? "var(--flame-soft)" : "var(--dim)" }} aria-current={active ? "page" : undefined} onClick={() => onChange(id)}>
+            <button key={id} style={{ ...styles.tabBtn, color: active ? "var(--mint)" : "var(--dim)" }} aria-current={active ? "page" : undefined} onClick={() => onChange(id)}>
               <Icon size={22} aria-hidden="true" strokeWidth={active ? 2.4 : 1.8} />
               <span>{label}</span>
               {n > 0 && (

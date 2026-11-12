@@ -199,9 +199,9 @@ function crossFailureReason(variety: Variety, garden: { variety: Variety; poll: 
 }
 
 export const VERDICT_STYLE: Record<Verdict, { mark: string; label: string; color: string; bg: string }> = {
-  ok: { mark: "◎", label: "受粉OK", color: "#3ddc97", bg: "rgba(61,220,151,.10)" },
-  better: { mark: "○", label: "もっと良くできる", color: "#f5b942", bg: "rgba(245,185,66,.12)" },
-  action: { mark: "△", label: "手助けが必要", color: "#f5b942", bg: "rgba(245,185,66,.12)" },
-  ng: { mark: "×", label: "このままでは実らない", color: "#ff7a52", bg: "rgba(255,91,46,.12)" },
-  na: { mark: "－", label: "受粉不要", color: "#8b93a3", bg: "rgba(255,255,255,.04)" },
+  ok: { mark: "◎", label: "受粉OK", color: "#3f7a36", bg: "#eaf4e2" },
+  better: { mark: "○", label: "もっと良くできる", color: "#8a6315", bg: "#fdf4e0" },
+  action: { mark: "△", label: "手助けが必要", color: "#a85d1c", bg: "#fcefe0" },
+  ng: { mark: "×", label: "このままでは実らない", color: "#9c2e1a", bg: "#fbe9e4" },
+  na: { mark: "－", label: "受粉不要", color: "#7a8472", bg: "#f1f0e8" },
 };

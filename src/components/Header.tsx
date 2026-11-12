@@ -1,3 +1,4 @@
+import { Sprout } from "lucide-react";
 import type { WeatherState } from "../types";
 import { CONDITION_EMOJI, conditionInfo } from "../lib/weather";
 import { styles } from "../styles";
@@ -15,14 +16,11 @@ export function Header({ weather, onWeather }: Props) {
       <div style={styles.headerInner}>
         <div style={styles.brand}>
           <div style={styles.brandMark} aria-hidden="true">
-            <i style={{ ...styles.brandBar, height: "42%", background: "var(--flame)" }} />
-            <i style={{ ...styles.brandBar, height: "74%", background: "var(--mint)" }} />
-            <i style={{ ...styles.brandBar, height: "100%", background: "var(--flame)" }} />
-            <i style={{ ...styles.brandBar, height: "56%", background: "var(--amber)" }} />
+            <Sprout size={22} color="#fff" />
           </div>
           <div>
             <h1 style={styles.brandTitle}>そだてる庭</h1>
-            <p style={styles.brandSub}>Home Farm OS</p>
+            <p style={styles.brandSub}>Home Farm Almanac</p>
           </div>
         </div>
         <button style={{ ...styles.headerWx, background: "transparent", border: "1px solid var(--line)", borderRadius: 9, padding: "6px 10px", cursor: "pointer" }} onClick={onWeather} aria-label="今日の天気">
