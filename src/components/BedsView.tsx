@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Pencil, X } from "lucide-react";
+import { Check, Pencil, Trash2, X } from "lucide-react";
 import { Camera, ChevronLeft, ChevronRight, Images, Leaf, Plus, Sprout } from "lucide-react";
 import type { Bed, GardenState } from "../types";
 import type { Action } from "../lib/garden";
@@ -186,7 +186,25 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
         ))}
 
       {sub === "status" && (
-        <BedCard bed={bed} plants={plants} photos={photos} today={today} say={say} onOpenPhoto={onOpenPhoto} openFeed={feedTarget === bed.id} onOpened={onFeedTargetDone} dispatch={dispatch} />
+        <>
+          <BedCard bed={bed} plants={plants} photos={photos} today={today} say={say} onOpenPhoto={onOpenPhoto} openFeed={feedTarget === bed.id} onOpened={onFeedTargetDone} dispatch={dispatch} />
+          <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
+            <button
+              style={{ ...styles.histBtn, color: "var(--flame)" }}
+              disabled={plants.length > 0 || state.beds.length <= 1}
+              title={plants.length > 0 ? "先に作物を片付けるか、別の場所へ移してください" : state.beds.length <= 1 ? "最後の場所は削除できません" : ""}
+              onClick={() => {
+                if (!window.confirm(`「${bed.name}」を削除しますか？\n写真と収穫の記録は残ります。`)) return;
+                dispatch({ type: "removeBed", bedId: bed.id });
+                onBack();
+              }}
+            >
+              <Trash2 size={15} aria-hidden="true" /> この場所を削除
+            </button>
+            {plants.length > 0 && <span style={styles.calNote}>削除するには、先に作物を片付けるか、株の ✏️ から別の場所へ移してください。</span>}
+            {plants.length === 0 && state.beds.length <= 1 && <span style={styles.calNote}>最後の1つは削除できません。</span>}
+          </div>
+        </>
       )}
 
       {sub === "photos" && (

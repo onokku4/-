@@ -19,6 +19,8 @@ export type Action =
   | { type: "remove"; uid: string }
   | { type: "editPlant"; uid: string; projectName?: string; plantedDate?: string; bedId?: string }
   | { type: "renameBed"; bedId: string; name: string }
+  /** 場所を削除。株が残っていれば断る。最後の1つは消せない。写真・収穫履歴は残る */
+  | { type: "removeBed"; bedId: string }
   | { type: "addBed"; id: string; soil: SoilTypeId; name?: string; soilMix?: string; today: string }
   | { type: "refreshBed"; bedId: string; today: string; soilMix?: string }
   | { type: "feedBed"; bedId: string; fertilizer: string; today: string }
@@ -219,6 +221,15 @@ export function apply(s: GardenState, a: Action): Outcome {
       const name = a.name.trim();
       if (!bed || !name || name === bed.name) return quiet(s);
       return { state: { ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, name } : b)) }, newBadges: [], toast: `✏️ 「${name}」に変更しました` };
+    }
+
+    case "removeBed": {
+      const bed = s.beds.find((b) => b.id === a.bedId);
+      if (!bed) return quiet(s);
+      if (s.beds.length <= 1) return { ...quiet(s), toast: "最後の場所は削除できません" };
+      const growing = s.plants.filter((p) => p.bedId === a.bedId).length;
+      if (growing > 0) return { ...quiet(s), toast: `「${bed.name}」にはまだ${growing}株あります。先に片付けるか、別の場所へ移してください` };
+      return { state: { ...s, beds: s.beds.filter((b) => b.id !== a.bedId) }, newBadges: [], toast: `🗑️ 「${bed.name}」を削除しました（写真と収穫の記録は残ります）` };
     }
 
     case "addBed": {

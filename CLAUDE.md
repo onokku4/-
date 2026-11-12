@@ -82,7 +82,7 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 写真は本体を IndexedDB（`ui/photoStore.ts`）、メタ情報（場所・日付・何日目・メモ）を `photos` に分けて持つ。`stages` は撮影時点のスナップショットで、株を片付けても残す。
 - 適温は `crop.tempRange`、なければ `TEMP_BY_CATEGORY`。落葉果樹・ベリーの寒さは休眠として扱い、`coldTenderBelowC` がある作物だけ寒さを出す。
 - 実績は固定の `BADGES` ＋ 作物ごとの `crop:<id>`（初収穫）/ `crop10:<id>`（10回収穫）。`award()` が収穫履歴から数える。
-- 名前・植え付け日・場所は `editPlant` / `renameBed` で後から直せる。
+- 名前・植え付け日・場所は `editPlant` / `renameBed` で後から直せる。場所の削除（`removeBed`）は株が無いときだけ。写真・収穫履歴は場所が消えても残す（normalize でも落とさない）。
 - 水やり間隔は `plant.waterAdjust`（0.5〜2）で個別補正。「まだ湿ってた」×1.15、「乾きすぎ」×0.85。
 - 日記（`diary`）と写真の `tags` は同じタグ集合（`PHOTO_TAGS`）。病害虫タグは「去年の今頃」の先回り表示とカレンダーの🐛に使う。
 - アプリは土の成分を**測れない**。`soils.ts` の値は一般的な目安で、袋の表示が優先。

@@ -130,8 +130,9 @@ const toLocation = (v: unknown): GardenLocation | null => {
 const toStage = (r: Raw): GrowthStage | undefined =>
   typeof r.label === "string" ? { label: r.label, emoji: str(r.emoji, "🌱"), day: Math.max(0, num(r.day)) } : undefined;
 
-const toPhoto = (r: Raw, bedIds: Set<string>): Photo | undefined =>
-  typeof r.id === "string" && isDate(r.date) && typeof r.bedId === "string" && bedIds.has(r.bedId)
+/** 場所を消しても写真は残す（画面では「削除された場所」と出る） */
+const toPhoto = (r: Raw): Photo | undefined =>
+  typeof r.id === "string" && isDate(r.date) && typeof r.bedId === "string"
     ? { id: r.id, bedId: r.bedId, date: r.date, note: str(r.note), stages: list(r.stages).map(toStage).filter(defined), tags: strList(r.tags) }
     : undefined;
 
@@ -167,7 +168,7 @@ export function normalize(raw: unknown): GardenState {
     weatherLog: toWeatherLog(raw.weatherLog),
     careLog: list(raw.careLog).map(toCare).filter(defined),
     location: toLocation(raw.location),
-    photos: list(raw.photos).map((p) => toPhoto(p, bedIds)).filter(defined),
+    photos: list(raw.photos).map(toPhoto).filter(defined),
     diary: list(raw.diary).map((d) => toDiary(d, plantUids)).filter(defined),
     lastBackupAt: strOrNull(raw.lastBackupAt),
     autoWeather: raw.autoWeather === true,
