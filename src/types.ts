@@ -137,6 +137,13 @@ export interface WeatherState {
   auto: (WeatherReading & { fetchedAt: string }) | null;
 }
 
+/** 登録した庭の位置。約1km（小数2桁）に丸めてから保存する */
+export interface GardenLocation {
+  lat: number;
+  lon: number;
+  registeredAt: string;
+}
+
 export type BadgeId =
   | "first"
   | "water10"
@@ -159,6 +166,8 @@ export interface GardenState {
   weather: WeatherState;
   weatherLog: WeatherLog;
   careLog: CareEvent[];
+  /** 登録済みなら、位置情報の許可なしにこの座標で天気を取る */
+  location: GardenLocation | null;
   autoWeather: boolean;
   notifyOn: boolean;
   notifyTime: string; // HH:MM

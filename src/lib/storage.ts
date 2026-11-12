@@ -1,8 +1,8 @@
-import type { BadgeId, Bed, CareEvent, CareKind, Condition, GardenState, HarvestRecord, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
+import type { BadgeId, Bed, CareEvent, CareKind, Condition, GardenLocation, GardenState, HarvestRecord, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
 import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
-import { CONDITIONS, DEFAULT_WEATHER, clampTemp } from "./weather";
+import { CONDITIONS, DEFAULT_WEATHER, clampTemp, roundCoord } from "./weather";
 import { findFertilizer } from "../data/fertilizers";
 import { findSoilMix } from "../data/soils";
 
@@ -112,6 +112,12 @@ const toWeatherLog = (v: unknown): WeatherLog => {
   return out;
 };
 
+const toLocation = (v: unknown): GardenLocation | null => {
+  if (!isObj(v) || typeof v.lat !== "number" || typeof v.lon !== "number") return null;
+  if (!Number.isFinite(v.lat) || !Number.isFinite(v.lon) || Math.abs(v.lat) > 90 || Math.abs(v.lon) > 180) return null;
+  return { lat: roundCoord(v.lat), lon: roundCoord(v.lon), registeredAt: str(v.registeredAt) };
+};
+
 const toCare = (r: Raw): CareEvent | undefined =>
   isDate(r.date) && isCareKind(r.kind) ? { date: r.date, kind: r.kind, label: str(r.label) } : undefined;
 
@@ -134,6 +140,7 @@ export function normalize(raw: unknown): GardenState {
     weather: toWeather(raw.weather),
     weatherLog: toWeatherLog(raw.weatherLog),
     careLog: list(raw.careLog).map(toCare).filter(defined),
+    location: toLocation(raw.location),
     autoWeather: raw.autoWeather === true,
     notifyOn: raw.notifyOn === true,
     notifyTime: /^\d{2}:\d{2}$/.test(str(raw.notifyTime)) ? str(raw.notifyTime) : base.notifyTime,

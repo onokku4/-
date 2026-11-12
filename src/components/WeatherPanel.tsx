@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Cloud, CloudRain, Minus, Plus, Snowflake, Sun, Wind, type LucideIcon } from "lucide-react";
+import { MapPin, MapPinOff } from "lucide-react";
 import type { Condition, GardenState } from "../types";
 import type { Action } from "../lib/garden";
 import { localDate } from "../lib/date";
@@ -17,13 +18,16 @@ const ICONS: Record<Condition, LucideIcon> = {
 
 interface Props {
   weather: GardenState["weather"];
+  location: GardenState["location"];
   autoWeather: boolean;
   fetching: boolean;
   onFetch: () => void;
+  /** 位置情報を1回使って庭の位置を登録し、天気を取る */
+  onRegister: () => void;
   dispatch: (a: Action) => void;
 }
 
-export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch }: Props) {
+export function WeatherPanel({ weather, location, autoWeather, fetching, onFetch, onRegister, dispatch }: Props) {
   const { current, auto } = weather;
   // 入力途中（空欄や「-」）の文字列。確定した数値だけを状態に反映する
   const [draft, setDraft] = useState<string | null>(null);
@@ -89,24 +93,41 @@ export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch
         <span style={styles.tempLabel}>{tempLabel(current.tempC)}</span>
       </div>
 
-      <div className="wx-line">
-        <button
-          role="switch"
-          aria-checked={autoWeather}
-          onClick={() => dispatch({ type: "setAutoWeather", on: !autoWeather })}
-          style={styles.autoToggle}
-        >
-          <span style={{ ...styles.toggleTrack, background: autoWeather ? "#7fb04f" : "rgba(255,255,255,.2)" }}>
-            <span style={{ ...styles.toggleKnob, transform: autoWeather ? "translateX(16px)" : "translateX(0)" }} />
+      {location ? (
+        <div className="wx-line">
+          <span style={styles.autoInfo}>
+            <MapPin size={12} aria-hidden="true" style={{ verticalAlign: -1 }} /> 庭の位置：登録済み（{location.lat.toFixed(2)}, {location.lon.toFixed(2)}・約1km精度）
           </span>
-          <span style={styles.autoToggleLabel}>位置情報で自動取得</span>
-        </button>
-        {autoWeather && (
           <button onClick={onFetch} disabled={fetching} style={{ ...styles.autoFetchBtn, opacity: fetching ? 0.6 : 1 }}>
-            {fetching ? "取得中…" : "📍 今すぐ取得"}
+            {fetching ? "取得中…" : "今すぐ取得"}
           </button>
-        )}
-      </div>
+          <button style={styles.resetBtn} onClick={() => dispatch({ type: "clearLocation" })} aria-label="庭の位置を解除">
+            <MapPinOff size={12} aria-hidden="true" style={{ verticalAlign: -1 }} /> 解除
+          </button>
+        </div>
+      ) : (
+        <div className="wx-line">
+          <button onClick={onRegister} disabled={fetching} style={{ ...styles.autoFetchBtn, opacity: fetching ? 0.6 : 1 }}>
+            {fetching ? "取得中…" : "📍 庭の位置を登録して毎日自動取得"}
+          </button>
+          <button
+            role="switch"
+            aria-checked={autoWeather}
+            onClick={() => dispatch({ type: "setAutoWeather", on: !autoWeather })}
+            style={styles.autoToggle}
+          >
+            <span style={{ ...styles.toggleTrack, background: autoWeather ? "#7fb04f" : "rgba(255,255,255,.2)" }}>
+              <span style={{ ...styles.toggleKnob, transform: autoWeather ? "translateX(16px)" : "translateX(0)" }} />
+            </span>
+            <span style={styles.autoToggleLabel}>登録せずに毎回位置情報で取得</span>
+          </button>
+          {autoWeather && (
+            <button onClick={onFetch} disabled={fetching} style={{ ...styles.autoFetchBtn, opacity: fetching ? 0.6 : 1 }}>
+              {fetching ? "取得中…" : "今すぐ取得"}
+            </button>
+          )}
+        </div>
+      )}
 
       {auto && (
         <div className="wx-line">
@@ -124,7 +145,11 @@ export function WeatherPanel({ weather, autoWeather, fetching, onFetch, dispatch
         </div>
       )}
 
-      <span style={styles.autoNote}>位置情報は取得時のみ使用し、保存しません</span>
+      <span style={styles.autoNote}>
+        {location
+          ? "登録した位置（約1kmに丸めた座標）だけを端末内に保存し、天気の取得にのみ使います。植え付け以降の天気も自動で取り込みます。"
+          : "登録すると位置情報の許可を毎回求めず、植え付け以降の天気も取り込めます。座標は約1kmに丸めて端末内にだけ保存します。"}
+      </span>
     </div>
   );
 }

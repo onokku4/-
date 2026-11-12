@@ -1,4 +1,4 @@
-import type { Condition, DailyWeather, WeatherLog, WeatherReading, WeatherState } from "../types";
+import type { Condition, DailyWeather, GardenLocation, WeatherLog, WeatherReading, WeatherState } from "../types";
 
 export const CONDITIONS: readonly { id: Condition; label: string; mult: number; color: string }[] = [
   { id: "sunny", label: "晴れ", mult: 1.0, color: "#e0a32e" },
@@ -133,39 +133,22 @@ export const conditionFromWmo = (code: number, windMs: number): Condition => {
 export type FetchWeatherError = "unsupported" | "denied" | "position" | "network";
 
 export type FetchWeatherResult =
-  | { ok: true; reading: WeatherReading; daily: WeatherLog }
+  | { ok: true; reading: WeatherReading; daily: WeatherLog; lat: number; lon: number }
   | { ok: false; error: FetchWeatherError };
 
-const getPosition = (): Promise<GeolocationPosition> =>
-  new Promise((resolve, reject) =>
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: false,
-      timeout: 8000,
-      maximumAge: 0,
-    }),
-  );
+/** 座標を約1km（小数2桁）に丸める。保存・送信はこの精度だけ */
+export const roundCoord = (v: number): number => Math.round(v * 100) / 100;
 
-/**
- * 位置情報を1回だけ取得して現在の天気と気温を返す。
- * 座標は小数2桁（約1km）に丸めて天気APIへ送るだけで、どこにも保存しない。
- */
-export async function fetchWeatherHere(): Promise<FetchWeatherResult> {
-  if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
-    return { ok: false, error: "unsupported" };
-  }
-  let pos: GeolocationPosition;
-  try {
-    pos = await getPosition();
-  } catch (e) {
-    const denied = (e as GeolocationPositionError).code === 1;
-    return { ok: false, error: denied ? "denied" : "position" };
-  }
+export const DAILY_PARAMS = "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max";
+
+/** 指定座標の現在の天気と、過去92日＋予報16日の日別天気 */
+export async function fetchWeatherAt(lat: number, lon: number): Promise<FetchWeatherResult> {
   try {
     const q = new URLSearchParams({
-      latitude: pos.coords.latitude.toFixed(2),
-      longitude: pos.coords.longitude.toFixed(2),
+      latitude: roundCoord(lat).toFixed(2),
+      longitude: roundCoord(lon).toFixed(2),
       current: "temperature_2m,weather_code,wind_speed_10m",
-      daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max",
+      daily: DAILY_PARAMS,
       past_days: String(PAST_DAYS),
       forecast_days: String(FORECAST_DAYS),
       timezone: "auto",
@@ -186,10 +169,81 @@ export async function fetchWeatherHere(): Promise<FetchWeatherResult> {
         tempC: clampTemp(temp),
       },
       daily: parseDaily(json),
+      lat: roundCoord(lat),
+      lon: roundCoord(lon),
     };
   } catch {
     return { ok: false, error: "network" };
   }
+}
+
+/** 過去の日別天気（start〜end、YYYY-MM-DD）。失敗したら空 */
+export async function fetchArchive(loc: Pick<GardenLocation, "lat" | "lon">, start: string, end: string): Promise<WeatherLog> {
+  try {
+    const q = new URLSearchParams({
+      latitude: loc.lat.toFixed(2),
+      longitude: loc.lon.toFixed(2),
+      start_date: start,
+      end_date: end,
+      daily: DAILY_PARAMS,
+      timezone: "auto",
+      wind_speed_unit: "ms",
+    });
+    const res = await fetch(`https://archive-api.open-meteo.com/v1/archive?${q}`);
+    if (!res.ok) return {};
+    return parseDaily(await res.json());
+  } catch {
+    return {};
+  }
+}
+
+const addDays = (date: string, n: number): string => new Date(Date.parse(date) + n * 86_400_000).toISOString().slice(0, 10);
+
+/**
+ * 植え付け以降で天気の記録が欠けている期間（昨日まで）。
+ * 欠けが1日もなければ null。欠けの最初から最後までを1つの範囲で返す（途中に記録済みの日が混ざっていてもよい）
+ */
+export const backfillRange = (log: WeatherLog, plantedDates: string[], today: string): { start: string; end: string; missing: number } | null => {
+  if (plantedDates.length === 0) return null;
+  const from = [...plantedDates].sort()[0]!;
+  const to = addDays(today, -1);
+  let start: string | null = null;
+  let end: string | null = null;
+  let missing = 0;
+  for (let d = from; d <= to; d = addDays(d, 1)) {
+    if (log[d]) continue;
+    missing++;
+    start ??= d;
+    end = d;
+  }
+  return start && end ? { start, end, missing } : null;
+};
+
+const getPosition = (): Promise<GeolocationPosition> =>
+  new Promise((resolve, reject) =>
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: false,
+      timeout: 8000,
+      maximumAge: 0,
+    }),
+  );
+
+/**
+ * 位置情報を1回だけ取得して天気を返す。
+ * 座標は約1kmに丸めて天気APIへ送る。保存するかどうかは呼び出し側（庭の位置の登録）が決める。
+ */
+export async function fetchWeatherHere(): Promise<FetchWeatherResult> {
+  if (typeof navigator === "undefined" || !("geolocation" in navigator)) {
+    return { ok: false, error: "unsupported" };
+  }
+  let pos: GeolocationPosition;
+  try {
+    pos = await getPosition();
+  } catch (e) {
+    const denied = (e as GeolocationPositionError).code === 1;
+    return { ok: false, error: denied ? "denied" : "position" };
+  }
+  return fetchWeatherAt(pos.coords.latitude, pos.coords.longitude);
 }
 
 export const FETCH_ERROR_MESSAGE: Record<FetchWeatherError, string> = {

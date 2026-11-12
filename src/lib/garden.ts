@@ -16,6 +16,9 @@ export type Action =
   | { type: "refreshBed"; bedId: string; today: string; soilMix?: string }
   | { type: "feedBed"; bedId: string; fertilizer: string; today: string }
   | { type: "weatherAuto"; reading: WeatherReading; fetchedAt: string; daily?: WeatherLog }
+  | { type: "weatherBackfill"; daily: WeatherLog }
+  | { type: "setLocation"; lat: number; lon: number; today: string }
+  | { type: "clearLocation" }
   | { type: "weatherAdjust"; patch: Partial<WeatherReading>; today: string }
   | { type: "weatherReset"; today: string }
   | { type: "setAutoWeather"; on: boolean }
@@ -41,6 +44,7 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
   weather: DEFAULT_WEATHER,
   weatherLog: {},
   careLog: [],
+  location: null,
   autoWeather: false,
   notifyOn: false,
   notifyTime: "07:00",
@@ -197,6 +201,12 @@ export function apply(s: GardenState, a: Action): Outcome {
 
     case "weatherAuto":
       return quiet({ ...s, weather: applyAuto(a.reading, a.fetchedAt), weatherLog: mergeLog(s.weatherLog, a.daily ?? {}) });
+    case "weatherBackfill":
+      return quiet({ ...s, weatherLog: mergeLog(s.weatherLog, a.daily) });
+    case "setLocation":
+      return quiet({ ...s, location: { lat: a.lat, lon: a.lon, registeredAt: a.today }, autoWeather: true });
+    case "clearLocation":
+      return quiet({ ...s, location: null });
     case "weatherAdjust":
       return quiet(logManual({ ...s, weather: adjust(s.weather, a.patch) }, a.today));
     case "weatherReset": {

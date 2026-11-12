@@ -33,7 +33,7 @@ export function App() {
   const [showHistory, setShowHistory] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [feedTarget, setFeedTarget] = useState<string | null>(null);
-  const { fetching, fetchNow } = useAutoWeather(state, dispatch, say);
+  const { fetching, fetchNow, register } = useAutoWeather(state, dispatch, say);
 
   // 各株の水やり状態・受粉診断はここで1回だけ計算して配る
   const views = useMemo<PlantView[]>(
@@ -64,9 +64,11 @@ export function App() {
     <div style={styles.page}>
       <Header
         weather={state.weather}
+        location={state.location}
         autoWeather={state.autoWeather}
         fetching={fetching}
         onFetch={() => void fetchNow()}
+        onRegister={() => void register()}
         dispatch={dispatch}
       />
 

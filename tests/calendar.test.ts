@@ -3,7 +3,7 @@ import { dayInfo, loggedDays, monthGrid, shiftMonth } from "../src/lib/calendar"
 import { apply, initialState, type Action } from "../src/lib/garden";
 import { normalize } from "../src/lib/storage";
 import { lastWaterOrRain, plantStatus } from "../src/lib/watering";
-import { manualDaily, mergeLog, parseDaily } from "../src/lib/weather";
+import { backfillRange, manualDaily, mergeLog, parseDaily } from "../src/lib/weather";
 import type { GardenState, WeatherLog } from "../src/types";
 
 const T = "2026-11-11";
@@ -131,5 +131,33 @@ describe("保存データ", () => {
     expect(Object.keys(n.weatherLog)).toEqual(["2026-11-02"]);
     expect(n.weatherLog["2026-11-02"]?.maxC).toBe(45);
     expect(n.careLog).toHaveLength(1);
+  });
+});
+
+describe("庭の位置と過去データの取り込み", () => {
+  it("登録すると丸めた座標が保存され、自動取得がONになる", () => {
+    const s = run(initialState(), { type: "setLocation", lat: 35.6812, lon: 139.7671, today: T });
+    expect(s.location).toEqual({ lat: 35.6812, lon: 139.7671, registeredAt: T });
+    expect(s.autoWeather).toBe(true);
+    expect(run(s, { type: "clearLocation" }).location).toBeNull();
+    expect(normalize(JSON.parse(JSON.stringify(s))).location).toEqual({ lat: 35.68, lon: 139.77, registeredAt: T });
+    expect(normalize({ location: { lat: 999, lon: 0 } }).location).toBeNull();
+  });
+  it("過去データの取り込みは手入力を残して欠けを埋める", () => {
+    const s = run(initialState(), { type: "weatherAdjust", patch: { condition: "snowy" }, today: "2026-11-10" });
+    const after = run(s, { type: "weatherBackfill", daily: parseDaily(SAMPLE) });
+    expect(after.weatherLog["2026-11-10"]?.condition).toBe("snowy");
+    expect(after.weatherLog["2026-11-09"]?.condition).toBe("cloudy");
+    expect(after.weather.current.condition).toBe("snowy"); // 今日の表示は変えない
+  });
+  it("欠けている期間は植え付け日から昨日まで", () => {
+    expect(backfillRange({}, [], T)).toBeNull();
+    expect(backfillRange({}, ["2026-11-01", "2026-10-20"], T)).toEqual({ start: "2026-10-20", end: "2026-11-10", missing: 22 });
+    const log = parseDaily(SAMPLE); // 11/09〜11/12
+    expect(backfillRange(log, ["2026-11-09"], T)).toBeNull();
+    expect(backfillRange(log, ["2026-11-07"], T)).toEqual({ start: "2026-11-07", end: "2026-11-08", missing: 2 });
+    // 途中に記録済みの日があっても1つの範囲
+    const holes = { ...log, "2026-11-05": log["2026-11-09"]! };
+    expect(backfillRange(holes, ["2026-11-03"], T)).toEqual({ start: "2026-11-03", end: "2026-11-08", missing: 5 });
   });
 });
