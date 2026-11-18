@@ -11,7 +11,7 @@ import { PhotoThumb } from "./PhotoThumb";
 interface Props {
   state: DayState;
   today: string;
-  onOpenPhoto: (id: string) => void;
+  onOpenPhoto: (id: string, bedId?: string | null) => void;
   dispatch: (a: Action) => void;
 }
 
@@ -19,7 +19,13 @@ const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 const md = (date: string) => `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`;
 
 /** カレンダー。写真がある日はマス全体が写真（Instagram のアーカイブ風）。日を押すと詳細 */
-export function CalendarView({ state, today, onOpenPhoto, dispatch }: Props) {
+export function CalendarView({ state: full, today, onOpenPhoto, dispatch }: Props) {
+  // 場所で絞り込み（写真・日記はその場所のものだけ表示）
+  const [bedFilter, setBedFilter] = useState<string | null>(null);
+  const state: DayState = bedFilter
+    ? { ...full, photos: full.photos.filter((p) => p.bedId === bedFilter), plants: full.plants.filter((p) => p.bedId === bedFilter) }
+    : full;
+  const photoBeds = full.beds.filter((b) => full.photos.some((p) => p.bedId === b.id));
   const [ym, setYm] = useState({ year: Number(today.slice(0, 4)), month: Number(today.slice(5, 7)) });
   const [picked, setPicked] = useState<string>(today);
   const [open, setOpen] = useState<string | null>(null);
@@ -47,6 +53,25 @@ export function CalendarView({ state, today, onOpenPhoto, dispatch }: Props) {
         {logged > 0 ? `天気を${logged}日ぶん記録中。` : "庭の位置を登録すると天気が記録されます。"}
         写真のある日はマスに表示。日を押すとその日の詳細。🌡️ は気温が合わなかった日。
       </div>
+
+      {photoBeds.length > 0 && (
+        <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 6, marginBottom: 6 }} role="group" aria-label="場所で絞り込み">
+          {[{ id: null, name: "すべての場所" }, ...photoBeds.map((b) => ({ id: b.id, name: b.name }))].map((b) => {
+            const on = bedFilter === b.id;
+            const n = b.id ? full.photos.filter((p) => p.bedId === b.id).length : full.photos.length;
+            return (
+              <button
+                key={b.id ?? "all"}
+                aria-pressed={on}
+                onClick={() => setBedFilter(b.id)}
+                style={{ ...styles.catChip, whiteSpace: "nowrap", background: on ? "var(--text)" : "var(--panel)", color: on ? "var(--panel)" : "var(--muted)", borderColor: on ? "var(--text)" : "var(--line)" }}
+              >
+                {b.name} <span style={{ fontFamily: "var(--mono)", fontSize: 11, opacity: 0.8 }}>📷{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div style={styles.calGrid} role="grid" aria-label={`${ym.year}年${ym.month}月`}>
         {WEEKDAYS.map((w, i) => (
@@ -139,7 +164,7 @@ export function CalendarView({ state, today, onOpenPhoto, dispatch }: Props) {
           <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
             {info.photos.map((p) => (
               <div key={p.id} style={{ flex: "0 0 auto", width: 120 }}>
-                <PhotoThumb id={p.id} alt={stageLine(p.stages)} style={{ width: 120, height: 120 }} onClick={() => onOpenPhoto(p.id)} />
+                <PhotoThumb id={p.id} alt={stageLine(p.stages)} style={{ width: 120, height: 120 }} onClick={() => onOpenPhoto(p.id, bedFilter)} />
                 <div style={{ ...styles.albumCap, marginTop: 3 }}>
                   <div style={styles.albumDate}>{state.beds.find((b) => b.id === p.bedId)?.name ?? "（削除された場所）"}</div>
                   <div style={styles.albumStage}>{p.stages.length ? p.stages.map((s) => `${s.day}日目`).join("・") : "植え付け前"}</div>
@@ -179,7 +204,7 @@ export function CalendarView({ state, today, onOpenPhoto, dispatch }: Props) {
           </div>
         ))}
       </div>
-      {open && <DayModal state={state} date={open} today={today} onOpenPhoto={onOpenPhoto} dispatch={dispatch} onClose={() => setOpen(null)} />}
+      {open && <DayModal state={state} date={open} today={today} onOpenPhoto={(id) => onOpenPhoto(id, bedFilter)} dispatch={dispatch} onClose={() => setOpen(null)} />}
     </section>
   );
 }

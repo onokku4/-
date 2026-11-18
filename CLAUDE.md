@@ -52,8 +52,8 @@ src/ui/backupFile.ts    zip の作成・読み込み（fflate）。共有シー�
 src/components/         表示のみ。計算は lib を呼ぶ
   TabBar / App          下部メニュータブ（ホーム・場所・カレンダー・設定）
   BedsView              場所の一覧 → 詳細（作物／状態／写真の下位タブ）
-  CalendarView          写真がある日はマスが写真（Instagram アーカイブ風）
-  PhotoViewer           全画面・横スワイプ（scroll-snap）でページ送り
+  CalendarView          写真がある日はマスが写真（Instagram アーカイブ風）。場所で絞り込める
+  PhotoViewer           全画面・横スワイプ（scroll-snap）でページ送り。場所から開くとその場所の写真だけ送る
   SettingsView          天気の位置・通知・バックアップ・履歴・バッジ
   DayModal              カレンダーの日を押したときの「その日のデータ」（株ごとの何日目・気温・水やり・写真）
   GuideModal            作物の育て方ヘルプ（育て方／道具と資材／病害虫）。株カードの📖と設定の作物図鑑から

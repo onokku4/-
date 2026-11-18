@@ -15,6 +15,8 @@ interface Props {
   /** 表示する順番（古い→新しい） */
   photos: Photo[];
   startId: string;
+  /** 場所で絞っているときの場所名（ヘッダーに出す） */
+  scopeLabel?: string | null;
   beds: Bed[];
   weatherLog: WeatherLog;
   dispatch: (a: Action) => void;
@@ -24,7 +26,7 @@ interface Props {
 const fmt = (date: string) => `${date.slice(0, 4)}.${date.slice(5, 7)}.${date.slice(8, 10)}`;
 
 /** 全画面の写真ビューア。横スワイプ（scroll-snap）でページ送り。キーボードの←→も効く */
-export function PhotoViewer({ photos, startId, beds, weatherLog, dispatch, onClose }: Props) {
+export function PhotoViewer({ photos, startId, scopeLabel = null, beds, weatherLog, dispatch, onClose }: Props) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(() => Math.max(0, photos.findIndex((p) => p.id === startId)));
   useEscape(onClose);
@@ -33,7 +35,7 @@ export function PhotoViewer({ photos, startId, beds, weatherLog, dispatch, onClo
   useEffect(() => {
     const el = track.current;
     if (!el) return;
-    el.scrollTo({ left: index * el.clientWidth, behavior: "instant" as ScrollBehavior });
+    el.scrollLeft = index * el.clientWidth;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -49,7 +51,10 @@ export function PhotoViewer({ photos, startId, beds, weatherLog, dispatch, onClo
     const el = track.current;
     const next = Math.max(0, Math.min(photos.length - 1, i));
     setIndex(next);
-    el?.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+    if (el) {
+      if (typeof el.scrollTo === "function") el.scrollTo({ left: next * el.clientWidth, behavior: "smooth" });
+      else el.scrollLeft = next * el.clientWidth;
+    }
   };
 
   useEffect(() => {
@@ -81,6 +86,7 @@ export function PhotoViewer({ photos, startId, beds, weatherLog, dispatch, onClo
           <X size={20} aria-hidden="true" />
         </button>
         <span style={styles.viewerCounter}>
+          {scopeLabel && <span style={{ display: "block", fontSize: 11, opacity: 0.8 }}>{scopeLabel} の写真</span>}
           {index + 1} / {photos.length}
         </span>
         <div style={{ display: "flex", gap: 6 }}>

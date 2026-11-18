@@ -120,3 +120,48 @@ describe("整形", () => {
     expect(formatDays({ days: 200 }, true)).toBe("約200日");
   });
 });
+
+describe("場所ごとの写真", () => {
+  const T = new Date();
+  const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const day = (n: number) => ymd(new Date(T.getFullYear(), T.getMonth(), Math.max(1, T.getDate() - n)));
+  const seed = () =>
+    localStorage.setItem(
+      "sodateru-niwa:v2",
+      JSON.stringify({
+        beds: [
+          { id: "a", name: "プランターA", type: "planter", n: 90, p: 90, k: 90 },
+          { id: "b", name: "プランターB", type: "planter", n: 90, p: 90, k: 90 },
+        ],
+        photos: [
+          { id: "p1", bedId: "a", date: day(0), stages: [] },
+          { id: "p2", bedId: "a", date: day(1), stages: [] },
+          { id: "p3", bedId: "b", date: day(0), stages: [] },
+        ],
+      }),
+    );
+
+  it("場所の写真タブから開くと、その場所の写真だけを送る", async () => {
+    seed();
+    render(<App />);
+    click("場所");
+    click("プランターBを開く");
+    fireEvent.click(screen.getByRole("tab", { name: /写真/ }));
+    fireEvent.click((await screen.findAllByRole("button", { name: /まだ何も植えていない頃/ }))[0]!);
+    const viewer = within(screen.getByRole("dialog", { name: "写真" }));
+    expect(viewer.getByText("プランターB の写真")).toBeTruthy();
+    expect(viewer.getByText(/1 \/ 1/)).toBeTruthy();
+  });
+
+  it("カレンダーを場所で絞り込める", () => {
+    seed();
+    render(<App />);
+    click("カレンダー");
+    const photoCells = () => screen.getAllByRole("gridcell").filter((c) => c.getAttribute("aria-label")?.includes("写真あり")).length;
+    const all = photoCells();
+    fireEvent.click(screen.getByRole("button", { name: /プランターB/ }));
+    expect(photoCells()).toBe(1);
+    fireEvent.click(screen.getByRole("button", { name: /すべての場所/ }));
+    expect(photoCells()).toBe(all);
+  });
+});

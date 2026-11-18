@@ -40,7 +40,9 @@ export function App() {
   const [openBedId, setOpenBedId] = useState<string | null>(null);
   /** 植えるウィザード。文字列ならその場所を最初に選ぶ */
   const [wizard, setWizard] = useState<false | true | string>(false);
-  const [viewerPhoto, setViewerPhoto] = useState<string | null>(null);
+  /** 写真ビューア。bedId があればその場所の写真だけをスワイプで送る */
+  const [viewer, setViewer] = useState<{ id: string; bedId: string | null } | null>(null);
+  const openPhoto = (id: string, bedId: string | null = null) => setViewer({ id, bedId });
   const [feedTarget, setFeedTarget] = useState<string | null>(null);
   const [showWeather, setShowWeather] = useState(false);
   const { fetching, fetchNow, register } = useAutoWeather(state, dispatch, say);
@@ -174,13 +176,13 @@ export function App() {
             onFeedTargetDone={() => setFeedTarget(null)}
             onAddBed={() => setWizard(true)}
             onPlant={(bedId) => setWizard(bedId)}
-            onOpenPhoto={setViewerPhoto}
+            onOpenPhoto={openPhoto}
             say={say}
             dispatch={dispatch}
           />
         )}
 
-        {tab === "calendar" && <CalendarView state={state} today={today} onOpenPhoto={setViewerPhoto} dispatch={dispatch} />}
+        {tab === "calendar" && <CalendarView state={state} today={today} onOpenPhoto={openPhoto} dispatch={dispatch} />}
 
         {tab === "settings" && (
           <SettingsView state={state} today={today} fetching={fetching} onFetch={() => void fetchNow()} onRegister={() => void register()} dispatch={dispatch} say={say} />
@@ -192,8 +194,16 @@ export function App() {
       {wizard !== false && (
         <AddWizard beds={state.beds} plants={state.plants} harvestLog={state.harvestLog} careLog={state.careLog} location={state.location} today={today} initialBedId={typeof wizard === "string" ? wizard : null} dispatch={dispatch} onClose={() => setWizard(false)} />
       )}
-      {viewerPhoto && (
-        <PhotoViewer photos={sortedPhotos} startId={viewerPhoto} beds={state.beds} weatherLog={state.weatherLog} dispatch={dispatch} onClose={() => setViewerPhoto(null)} />
+      {viewer && (
+        <PhotoViewer
+          photos={viewer.bedId ? sortedPhotos.filter((p) => p.bedId === viewer.bedId) : sortedPhotos}
+          scopeLabel={viewer.bedId ? (state.beds.find((b) => b.id === viewer.bedId)?.name ?? "削除された場所") : null}
+          startId={viewer.id}
+          beds={state.beds}
+          weatherLog={state.weatherLog}
+          dispatch={dispatch}
+          onClose={() => setViewer(null)}
+        />
       )}
       <Toast message={toast} />
       {popupBadge && <BadgePopup badge={popupBadge} onClose={dismissBadge} />}

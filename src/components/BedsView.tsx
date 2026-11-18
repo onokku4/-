@@ -27,7 +27,7 @@ interface Props {
   onFeedTargetDone: () => void;
   onAddBed: () => void;
   onPlant: (bedId: string) => void;
-  onOpenPhoto: (id: string) => void;
+  onOpenPhoto: (id: string, bedId?: string | null) => void;
   say: (m: string) => void;
   dispatch: (a: Action) => void;
 }
@@ -187,7 +187,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
 
       {sub === "status" && (
         <>
-          <BedCard bed={bed} plants={plants} photos={photos} today={today} say={say} onOpenPhoto={onOpenPhoto} openFeed={feedTarget === bed.id} onOpened={onFeedTargetDone} dispatch={dispatch} />
+          <BedCard bed={bed} plants={plants} photos={photos} today={today} say={say} onOpenPhoto={(id) => onOpenPhoto(id, bed.id)} openFeed={feedTarget === bed.id} onOpened={onFeedTargetDone} dispatch={dispatch} />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
             <button
               style={{ ...styles.histBtn, color: "var(--flame)" }}
@@ -222,7 +222,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
             <div style={styles.albumGrid}>
               {photos.map((p) => (
                 <figure key={p.id} style={styles.albumItem}>
-                  <PhotoThumb id={p.id} alt={`${p.date} ${stageLine(p.stages)}`} style={styles.albumThumb} onClick={() => onOpenPhoto(p.id)} />
+                  <PhotoThumb id={p.id} alt={`${p.date} ${stageLine(p.stages)}`} style={styles.albumThumb} onClick={() => onOpenPhoto(p.id, bed.id)} />
                   <figcaption style={styles.albumCap}>
                     <div style={styles.albumDate}>{p.date.slice(5).replace("-", "/")}</div>
                     <div style={styles.albumStage}>{p.stages.length ? p.stages.map((s) => `${s.day}日目`).join("・") : "植え付け前"}</div>
