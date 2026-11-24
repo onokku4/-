@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { Check, Pencil, Trash2, X } from "lucide-react";
-import { Camera, ChevronLeft, ChevronRight, Images, Leaf, Plus, Sprout } from "lucide-react";
+import { ChevronLeft, ChevronRight, Images, Leaf, Plus, Sprout } from "lucide-react";
 import type { Bed, GardenState } from "../types";
 import type { Action } from "../lib/garden";
 import { findCrop, soilType } from "../data/catalog";
-import { stageLine } from "../lib/photos";
 import { feedSchedule, nutrientsOn, soilHealth } from "../lib/soil";
 import { styles } from "../styles";
 import { BedCard } from "./BedCard";
-import { PhotoCapture } from "./PhotoCapture";
+import { GazeView } from "./GazeView";
 import { PhotoThumb } from "./PhotoThumb";
 import { PlantCard } from "./PlantCard";
 import type { PlantView } from "./plantView";
@@ -28,6 +27,10 @@ interface Props {
   onAddBed: () => void;
   onPlant: (bedId: string) => void;
   onOpenPhoto: (id: string, bedId?: string | null) => void;
+  /** 写真の位置合わせを開く */
+  onAlign: (id: string) => void;
+  /** その場所のタイムラプスを開く */
+  onTimelapse: (bedId: string) => void;
   say: (m: string) => void;
   dispatch: (a: Action) => void;
 }
@@ -93,8 +96,9 @@ function BedList({ state, views, today, onOpenBed, onAddBed }: Props) {
   );
 }
 
-function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetDone, onPlant, onOpenPhoto, say, dispatch }: Props & { bed: Bed; onBack: () => void }) {
-  const [sub, setSub] = useState<SubTab>(feedTarget === bed.id ? "status" : "plants");
+function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetDone, onPlant, onOpenPhoto, onAlign, onTimelapse, say, dispatch }: Props & { bed: Bed; onBack: () => void }) {
+  // 写真があれば「眺める」から始める
+  const [sub, setSub] = useState<SubTab>(feedTarget === bed.id ? "status" : state.photos.some((p) => p.bedId === bed.id) ? "photos" : "plants");
   const plants = state.plants.filter((p) => p.bedId === bed.id);
   const bedViews = views.filter((v) => v.plant.bedId === bed.id);
   const photos = [...state.photos.filter((p) => p.bedId === bed.id)].sort((a, b) => b.date.localeCompare(a.date));
@@ -156,7 +160,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
           [
             ["plants", "作物", <Sprout key="s" size={14} aria-hidden="true" />, plants.length],
             ["status", "状態", <Leaf key="l" size={14} aria-hidden="true" />, 0],
-            ["photos", "写真", <Images key="i" size={14} aria-hidden="true" />, photos.length],
+            ["photos", "眺める", <Images key="i" size={14} aria-hidden="true" />, photos.length],
           ] as const
         ).map(([id, label, icon, n]) => (
           <button key={id} role="tab" aria-selected={sub === id} style={{ ...styles.subTab, ...(sub === id ? styles.subTabActive : {}) }} onClick={() => setSub(id)}>
@@ -187,7 +191,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
 
       {sub === "status" && (
         <>
-          <BedCard bed={bed} plants={plants} photos={photos} today={today} say={say} onOpenPhoto={(id) => onOpenPhoto(id, bed.id)} openFeed={feedTarget === bed.id} onOpened={onFeedTargetDone} dispatch={dispatch} />
+          <BedCard bed={bed} plants={plants} photos={photos} today={today} say={say} onOpenPhoto={(id) => onOpenPhoto(id, bed.id)} onAlign={onAlign} openFeed={feedTarget === bed.id} onOpened={onFeedTargetDone} dispatch={dispatch} />
           <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-start" }}>
             <button
               style={{ ...styles.histBtn, color: "var(--flame)" }}
@@ -208,30 +212,7 @@ function BedDetail({ state, views, today, bed, onBack, feedTarget, onFeedTargetD
       )}
 
       {sub === "photos" && (
-        <div>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-            <span style={styles.calNote}>{photos.length > 0 ? `${photos.length}枚。タップで大きく、横にスワイプでページ送り。` : "撮影すると、植え付けから何日目かと一緒に残ります。"}</span>
-            <PhotoCapture bedId={bed.id} dispatch={dispatch} say={say} compact={photos.length > 0} />
-          </div>
-          {photos.length === 0 ? (
-            <div style={styles.empty}>
-              <Camera size={36} color="var(--dim)" aria-hidden="true" />
-              <p style={styles.emptyText}>まだ写真がありません。</p>
-            </div>
-          ) : (
-            <div style={styles.albumGrid}>
-              {photos.map((p) => (
-                <figure key={p.id} style={styles.albumItem}>
-                  <PhotoThumb id={p.id} alt={`${p.date} ${stageLine(p.stages)}`} style={styles.albumThumb} onClick={() => onOpenPhoto(p.id, bed.id)} />
-                  <figcaption style={styles.albumCap}>
-                    <div style={styles.albumDate}>{p.date.slice(5).replace("-", "/")}</div>
-                    <div style={styles.albumStage}>{p.stages.length ? p.stages.map((s) => `${s.day}日目`).join("・") : "植え付け前"}</div>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          )}
-        </div>
+        <GazeView bed={bed} photos={state.photos} onOpenPhoto={(id) => onOpenPhoto(id, bed.id)} onAlign={onAlign} onTimelapse={() => onTimelapse(bed.id)} say={say} dispatch={dispatch} />
       )}
     </section>
   );

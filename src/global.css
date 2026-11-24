@@ -121,3 +121,5 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 /* Instagram のアーカイブ風：写真がある日はマス全体が写真 */
 .cal-photo-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+input[type="range"] { accent-color: var(--mint); }

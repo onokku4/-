@@ -3,6 +3,7 @@ import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
 import { CONDITIONS, DEFAULT_WEATHER, clampTemp, roundCoord } from "./weather";
+import { clampAlign, defaultPotShape } from "./timelapse";
 import { findFertilizer } from "../data/fertilizers";
 import { findSoilMix } from "../data/soils";
 
@@ -40,6 +41,7 @@ const toBed = (r: Raw): Bed | undefined =>
         nutrientsAt: strOrNull(r.nutrientsAt),
         fedAt: strOrNull(r.fedAt),
         fertilizer: findFertilizer(str(r.fertilizer))?.id ?? null,
+        potShape: r.potShape === "round" || r.potShape === "square" || r.potShape === "rect" ? r.potShape : defaultPotShape(isSoil(r.type) ? r.type : "planter"),
       }
     : undefined;
 
@@ -133,7 +135,15 @@ const toStage = (r: Raw): GrowthStage | undefined =>
 /** 場所を消しても写真は残す（画面では「削除された場所」と出る） */
 const toPhoto = (r: Raw): Photo | undefined =>
   typeof r.id === "string" && isDate(r.date) && typeof r.bedId === "string"
-    ? { id: r.id, bedId: r.bedId, date: r.date, note: str(r.note), stages: list(r.stages).map(toStage).filter(defined), tags: strList(r.tags) }
+    ? {
+        id: r.id,
+        bedId: r.bedId,
+        date: r.date,
+        note: str(r.note),
+        stages: list(r.stages).map(toStage).filter(defined),
+        tags: strList(r.tags),
+        ...(isObj(r.align) ? { align: clampAlign(r.align) } : {}),
+      }
     : undefined;
 
 const strList = (v: unknown): string[] => (Array.isArray(v) ? [...new Set(v.filter((x): x is string => typeof x === "string"))] : []);

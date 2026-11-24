@@ -11,10 +11,12 @@ interface Props {
   dispatch: (a: Action) => void;
   say: (m: string) => void;
   compact?: boolean;
+  /** 保存できたら呼ぶ（位置合わせを開くなど） */
+  onCaptured?: (id: string) => void;
 }
 
 /** カメラ／写真から1枚選び、縮小して保存し、成長記録として登録する */
-export function PhotoCapture({ bedId, dispatch, say, compact }: Props) {
+export function PhotoCapture({ bedId, dispatch, say, compact, onCaptured }: Props) {
   const inputId = useId();
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
@@ -28,6 +30,7 @@ export function PhotoCapture({ bedId, dispatch, say, compact }: Props) {
       await savePhotoBlob(id, blob);
       const today = localDate();
       dispatch({ type: "addPhoto", id, bedId, date: today, note: "", today });
+      onCaptured?.(id);
     } catch {
       say("写真を保存できませんでした（この端末の保存領域が使えない可能性があります）");
     } finally {

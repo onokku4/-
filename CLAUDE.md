@@ -44,14 +44,20 @@ src/lib/                純粋関数。React にも現在時刻にも依存し�
   season.ts             地域（緯度）に合わせた植え付け適期、今月植えられる作物
   gdd.ts                積算温度（基準10℃）での収穫予測。記録のない日は標準8℃日で補う
   harvest.ts            作物ごとの収穫回数・個数・重さの集計
+  timelapse.ts          鉢の枠（形ごとの幾何）・写真の位置合わせ（Align）・タイムラプスのコマ／再生時間・縦スクロールの透明度
   supplies.ts           今そろえる・補充する物の提案（成長段階・肥料残量・霜予報から）、霜注意
   date.ts               ローカル日付
 src/hooks/useGarden.ts  状態保持と副作用（保存・トースト・バッジ）
 src/ui/photoStore.ts    写真本体の IndexedDB 保存と端末内縮小（長辺1280px JPEG）
+src/ui/frameRender.ts   位置合わせした1コマを canvas に描く・字幕・動画形式の判定
 src/ui/backupFile.ts    zip の作成・読み込み（fflate）。共有シート or ダウンロード
 src/components/         表示のみ。計算は lib を呼ぶ
   TabBar / App          下部メニュータブ（ホーム・場所・カレンダー・設定）
-  BedsView              場所の一覧 → 詳細（作物／状態／写真の下位タブ）
+  BedsView              場所の一覧 → 詳細（作物／状態／眺めるの下位タブ。写真があれば「眺める」から）
+  GazeView              眺める：上が植えたて・下が今の縦スクロール。中央が不透明、離れるほど薄く
+  AlignEditor           撮影直後・あとから、写真の鉢を画面の鉢の枠に合わせる（ドラッグ・2本指・前回を重ねる）
+  TimelapseModal        位置合わせした写真のコマ送り（6/12/24コマ/秒）。MediaRecorder で動画保存
+  AlignedPhoto / PotFrame  位置合わせを反映した正方形の写真／鉢の枠のオーバーレイ
   CalendarView          写真がある日はマスが写真（Instagram アーカイブ風）。場所で絞り込める
   PhotoViewer           全画面・横スワイプ（scroll-snap）でページ送り。場所から開くとその場所の写真だけ送る
   SettingsView          天気の位置・通知・バックアップ・履歴・バッジ
@@ -85,6 +91,8 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 名前・植え付け日・場所は `editPlant` / `renameBed` で後から直せる。場所の削除（`removeBed`）は株が無いときだけ。写真・収穫履歴は場所が消えても残す（normalize でも落とさない）。
 - 水やり間隔は `plant.waterAdjust`（0.5〜2）で個別補正。「まだ湿ってた」×1.15、「乾きすぎ」×0.85。
 - 日記（`diary`）と写真の `tags` は同じタグ集合（`PHOTO_TAGS`）。病害虫タグは「去年の今頃」の先回り表示とカレンダーの🐛に使う。
+- 写真の位置合わせは元画像を変えず `photo.align`（x, y, scale, rotate。正方形の枠に対する比率）に持つ。CSS（`AlignedPhoto`）と canvas（`drawAligned`）は同じ変換で描く。既定値に戻したら `align` を消す。
+- 鉢の形は `bed.potShape`（round / square / rect）。既定はプランター＝長方形、畑＝四角。
 - アプリは土の成分を**測れない**。`soils.ts` の値は一般的な目安で、袋の表示が優先。
 
 ## 作物を足すとき

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Crosshair, Trash2, X } from "lucide-react";
 import type { Bed, Photo, WeatherLog } from "../types";
 import type { Action } from "../lib/garden";
 import { PHOTO_TAGS } from "../data/agronomy";
@@ -20,13 +20,15 @@ interface Props {
   beds: Bed[];
   weatherLog: WeatherLog;
   dispatch: (a: Action) => void;
+  /** 位置合わせを開く */
+  onAlign?: (id: string) => void;
   onClose: () => void;
 }
 
 const fmt = (date: string) => `${date.slice(0, 4)}.${date.slice(5, 7)}.${date.slice(8, 10)}`;
 
 /** 全画面の写真ビューア。横スワイプ（scroll-snap）でページ送り。キーボードの←→も効く */
-export function PhotoViewer({ photos, startId, scopeLabel = null, beds, weatherLog, dispatch, onClose }: Props) {
+export function PhotoViewer({ photos, startId, scopeLabel = null, beds, weatherLog, dispatch, onAlign, onClose }: Props) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(() => Math.max(0, photos.findIndex((p) => p.id === startId)));
   useEscape(onClose);
@@ -145,6 +147,11 @@ export function PhotoViewer({ photos, startId, scopeLabel = null, beds, weatherL
             {photos.length <= 12 &&
               photos.map((p, i) => <i key={p.id} style={{ width: 6, height: 6, borderRadius: 3, background: i === index ? "var(--flame)" : "var(--line)" }} />)}
           </div>
+          {onAlign && (
+            <button style={{ ...styles.histBtn, padding: "6px 10px", marginLeft: "auto", marginRight: 6 }} onClick={() => onAlign(cur.id)}>
+              <Crosshair size={14} aria-hidden="true" /> 鉢の位置合わせ
+            </button>
+          )}
           <button style={{ ...styles.histBtn, color: "var(--flame-soft)", padding: "6px 10px" }} onClick={remove}>
             <Trash2 size={14} aria-hidden="true" /> 削除
           </button>

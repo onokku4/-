@@ -21,12 +21,13 @@ interface CardProps {
   today: string;
   say: (m: string) => void;
   onOpenPhoto: (id: string) => void;
+  onAlign?: (id: string) => void;
   openFeed: boolean;
   onOpened: () => void;
   dispatch: (a: Action) => void;
 }
 
-export function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed, onOpened, dispatch }: CardProps) {
+export function BedCard({ bed, plants, photos, today, say, onOpenPhoto, onAlign, openFeed, onOpened, dispatch }: CardProps) {
   const [picking, setPicking] = useState<Picking>(null);
   useEffect(() => {
     if (openFeed) {
@@ -89,7 +90,7 @@ export function BedCard({ bed, plants, photos, today, say, onOpenPhoto, openFeed
           </button>
         )}
         <span style={{ marginLeft: "auto" }}>
-          <PhotoCapture bedId={bed.id} dispatch={dispatch} say={say} compact={photos.length > 0} />
+          <PhotoCapture bedId={bed.id} dispatch={dispatch} say={say} compact={photos.length > 0} onCaptured={onAlign} />
         </span>
       </div>
 

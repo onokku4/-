@@ -14,6 +14,7 @@ import { useToday } from "./hooks/useToday";
 import { useWaterNotify } from "./hooks/useWaterNotify";
 import { styles } from "./styles";
 import { AddWizard } from "./components/AddWizard";
+import { AlignEditor } from "./components/AlignEditor";
 import { BadgePopup } from "./components/BadgePopup";
 import { BedsView } from "./components/BedsView";
 import { CalendarView } from "./components/CalendarView";
@@ -29,6 +30,7 @@ import { SeasonCard } from "./components/SeasonCard";
 import { SuppliesCard } from "./components/SuppliesCard";
 import { TempAlert } from "./components/TempAlert";
 import { TabBar, type Tab } from "./components/TabBar";
+import { TimelapseModal } from "./components/TimelapseModal";
 import { Toast } from "./components/Toast";
 import { WaterAlert } from "./components/WaterAlert";
 import { WeatherPanel } from "./components/WeatherPanel";
@@ -43,6 +45,9 @@ export function App() {
   /** 写真ビューア。bedId があればその場所の写真だけをスワイプで送る */
   const [viewer, setViewer] = useState<{ id: string; bedId: string | null } | null>(null);
   const openPhoto = (id: string, bedId: string | null = null) => setViewer({ id, bedId });
+  /** 位置合わせ中の写真、タイムラプス中の場所 */
+  const [aligning, setAligning] = useState<string | null>(null);
+  const [timelapseBed, setTimelapseBed] = useState<string | null>(null);
   const [feedTarget, setFeedTarget] = useState<string | null>(null);
   const [showWeather, setShowWeather] = useState(false);
   const { fetching, fetchNow, register } = useAutoWeather(state, dispatch, say);
@@ -177,6 +182,8 @@ export function App() {
             onAddBed={() => setWizard(true)}
             onPlant={(bedId) => setWizard(bedId)}
             onOpenPhoto={openPhoto}
+            onAlign={setAligning}
+            onTimelapse={setTimelapseBed}
             say={say}
             dispatch={dispatch}
           />
@@ -202,8 +209,22 @@ export function App() {
           beds={state.beds}
           weatherLog={state.weatherLog}
           dispatch={dispatch}
+          onAlign={setAligning}
           onClose={() => setViewer(null)}
         />
+      )}
+      {aligning && state.photos.some((p) => p.id === aligning) && (
+        <AlignEditor
+          key={aligning}
+          photo={state.photos.find((p) => p.id === aligning)!}
+          bed={state.beds.find((b) => b.id === state.photos.find((p) => p.id === aligning)?.bedId)}
+          photos={state.photos}
+          dispatch={dispatch}
+          onClose={() => setAligning(null)}
+        />
+      )}
+      {timelapseBed && state.beds.some((b) => b.id === timelapseBed) && (
+        <TimelapseModal bed={state.beds.find((b) => b.id === timelapseBed)!} photos={state.photos} say={say} onClose={() => setTimelapseBed(null)} />
       )}
       <Toast message={toast} />
       {popupBadge && <BadgePopup badge={popupBadge} onClose={dismissBadge} />}

@@ -146,7 +146,8 @@ describe("場所ごとの写真", () => {
     render(<App />);
     click("場所");
     click("プランターBを開く");
-    fireEvent.click(screen.getByRole("tab", { name: /写真/ }));
+    // 写真がある場所は「眺める」から始まる
+    expect(screen.getByRole("tab", { name: /眺める/ }).getAttribute("aria-selected")).toBe("true");
     fireEvent.click((await screen.findAllByRole("button", { name: /まだ何も植えていない頃/ }))[0]!);
     const viewer = within(screen.getByRole("dialog", { name: "写真" }));
     expect(viewer.getByText("プランターB の写真")).toBeTruthy();

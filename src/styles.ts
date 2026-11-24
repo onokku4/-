@@ -70,6 +70,32 @@ export const styles = {
   },
   editBox: { background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 12, padding: 12, display: "flex", flexDirection: "column", gap: 10 },
   tempChip: { display: "inline-flex", alignItems: "center", gap: 4, borderRadius: 7, padding: "2px 8px", fontSize: 11, fontWeight: 700 },
+  /* 眺める（縦スクロール） */
+  gazeWrap: { position: "relative", borderRadius: 18, background: "#1d2419", overflow: "hidden" },
+  gazeScroller: {
+    height: "max(340px, min(640px, calc(100dvh - 420px)))", overflowY: "auto", scrollSnapType: "y proximity", display: "flex", flexDirection: "column",
+    alignItems: "center", gap: 18, padding: "0 16px", WebkitOverflowScrolling: "touch",
+  },
+  gazeSpacer: { flex: "0 0 22%", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "10px 0", width: "100%" },
+  gazeEnd: { fontFamily: "var(--mono)", fontSize: 11, letterSpacing: "0.2em", color: "rgba(255,255,255,.55)" },
+  gazeItem: {
+    flex: "0 0 auto", height: "52%", aspectRatio: "1 / 1", maxWidth: "100%", position: "relative", scrollSnapAlign: "center",
+    transition: "opacity .12s linear, transform .12s linear", willChange: "opacity, transform",
+  },
+  gazeBtn: { display: "block", width: "100%", height: "100%", padding: 0, border: "none", background: "transparent", cursor: "pointer", borderRadius: 16 },
+  gazeAlignBtn: {
+    position: "absolute", right: 8, bottom: 8, display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,0,0,.55)",
+    color: "#fff", border: "1px solid rgba(255,255,255,.3)", borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+  },
+  gazeBand: {
+    position: "absolute", top: 0, left: 0, right: 0, zIndex: 2, display: "flex", justifyContent: "space-between", alignItems: "baseline",
+    padding: "12px 16px", background: "linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,0))", color: "#fff", pointerEvents: "none",
+  },
+  gazeDay: { fontFamily: "var(--display)", fontSize: 24 },
+  gazeDate: { fontFamily: "var(--mono)", fontSize: 12, opacity: 0.85 },
+  alignRow: { display: "flex", alignItems: "center", gap: 10 },
+  alignLabel: { fontSize: 12, fontWeight: 700, color: "var(--muted)", width: 44 },
+  alignVal: { fontFamily: "var(--mono)", fontSize: 11.5, color: "var(--muted)", width: 52, textAlign: "right" },
   feedbackBtn: {
     background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 7, padding: "3px 8px",
     fontSize: 11, fontWeight: 700, color: "var(--muted)", cursor: "pointer",

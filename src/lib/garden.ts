@@ -1,9 +1,10 @@
-import type { BadgeId, Bed, CareEvent, DiaryEntry, GardenState, Plant, SoilTypeId, WeatherLog, WeatherReading } from "../types";
+import type { Align, BadgeId, Bed, CareEvent, DiaryEntry, GardenState, Plant, PotShape, SoilTypeId, WeatherLog, WeatherReading } from "../types";
 import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilType, varietyOf } from "../data/catalog";
 import { CROP_BADGE_HARVESTS, GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
 import { diagnose } from "./pollination";
 import { growthStages } from "./photos";
+import { clampAlign, isDefaultAlign } from "./timelapse";
 import { afterHarvest, fed, newBed, refreshed } from "./soil";
 import { DEFAULT_WEATHER, adjust, applyAuto, manualDaily, mergeLog, resetToAuto } from "./weather";
 
@@ -16,6 +17,9 @@ export type Action =
   | { type: "addDiary"; id: string; date: string; text: string; plantUid?: string; tags?: string[] }
   | { type: "removeDiary"; id: string }
   | { type: "setPhotoTags"; id: string; tags: string[] }
+  /** 写真の位置合わせ。null で解除（中央・等倍に戻す） */
+  | { type: "setPhotoAlign"; id: string; align: Align | null }
+  | { type: "setPotShape"; bedId: string; shape: PotShape }
   | { type: "remove"; uid: string }
   | { type: "editPlant"; uid: string; projectName?: string; plantedDate?: string; bedId?: string }
   | { type: "renameBed"; bedId: string; name: string }
@@ -272,6 +276,18 @@ export function apply(s: GardenState, a: Action): Outcome {
     }
     case "removePhoto":
       return s.photos.some((p) => p.id === a.id) ? { state: { ...s, photos: s.photos.filter((p) => p.id !== a.id) }, newBadges: [], toast: "写真を削除しました" } : quiet(s);
+    case "setPhotoAlign": {
+      if (!s.photos.some((p) => p.id === a.id)) return quiet(s);
+      const align = a.align ? clampAlign(a.align) : null;
+      const photos = s.photos.map((p) => {
+        if (p.id !== a.id) return p;
+        const { align: _old, ...rest } = p;
+        return align && !isDefaultAlign(align) ? { ...rest, align } : rest;
+      });
+      return quiet({ ...s, photos });
+    }
+    case "setPotShape":
+      return s.beds.some((b) => b.id === a.bedId) ? quiet({ ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, potShape: a.shape } : b)) }) : quiet(s);
     case "setPhotoTags":
       return quiet({ ...s, photos: s.photos.map((p) => (p.id === a.id ? { ...p, tags: [...new Set(a.tags)] } : p)) });
     case "waterFeedback": {
