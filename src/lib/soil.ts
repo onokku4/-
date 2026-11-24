@@ -3,7 +3,7 @@ import { soilType } from "../data/catalog";
 import { findFertilizer } from "../data/fertilizers";
 import { findSoilMix } from "../data/soils";
 import { daysBetween } from "./date";
-import { defaultPotShape } from "./timelapse";
+import { DEFAULT_VIEW, defaultPotShape } from "./timelapse";
 
 export const NUTRIENTS: readonly { key: keyof Nutrients; label: string; short: string; color: string; role: string }[] = [
   { key: "n", label: "窒素", short: "N", color: "#5a9b4f", role: "葉を育てる" },
@@ -30,7 +30,7 @@ const FULL: Nutrients = { n: 100, p: 100, k: 100 };
 export const newBed = (id: string, name: string, type: SoilTypeId = "planter", soilMix: string | null = null, today: string | null = null): Bed => {
   const mix = findSoilMix(soilMix);
   const base = mix?.nutrients ?? FULL;
-  return { id, name, type, uses: 0, ...base, soilMix: mix?.id ?? null, nutrientsAt: today, fedAt: mix ? today : null, fertilizer: null, potShape: defaultPotShape(type) };
+  return { id, name, type, uses: 0, ...base, soilMix: mix?.id ?? null, nutrientsAt: today, fedAt: mix ? today : null, fertilizer: null, potShape: defaultPotShape(type), viewAngle: DEFAULT_VIEW };
 };
 
 export interface SoilHealth {

@@ -14,6 +14,7 @@ import {
   framesFor,
   isDefaultAlign,
   potFrame,
+  potGuide,
 } from "../src/lib/timelapse";
 import type { GardenState } from "../src/types";
 
@@ -57,6 +58,39 @@ describe("位置合わせ", () => {
     // 旧データ：形がなければ種類から
     expect(normalize({ beds: [{ id: "f", type: "field" }] }).beds[0]?.potShape).toBe("square");
     expect(normalize({ beds: [{ id: "b" }], photos: [{ id: "x", bedId: "b", date: T, align: { x: 5 } }] }).photos[0]?.align).toEqual({ x: 1, y: 0, scale: 1, rotate: 0 });
+  });
+});
+
+describe("撮る角度ごとの枠", () => {
+  it("見下ろしは鉢が下寄り、上は株の余白。暗くしない。縁の中心は左右中央", () => {
+    for (const shape of ["round", "square", "rect"] as const) {
+      const g = potGuide(shape, "oblique");
+      expect(g.hole, shape).toBeNull();
+      expect(g.anchor[0], shape).toBeCloseTo(0.5);
+      expect(g.anchor[1], shape).toBeGreaterThan(0.6);
+      const ys = g.outline.flatMap((o) => (o.kind === "poly" ? o.points.map((p) => p[1]) : o.kind === "ellipse" ? [o.cy - o.ry, o.cy + o.ry] : [o.y, o.y + o.h]));
+      expect(Math.min(...ys), shape).toBeGreaterThan(0.5);
+      expect(Math.max(...ys), shape).toBeLessThanOrEqual(0.95);
+    }
+    // 長方形プランターの縁は奥が狭い台形
+    const rim = potGuide("rect", "oblique").outline[0]!;
+    if (rim.kind !== "poly") throw new Error();
+    const [farL, farR, nearR, nearL] = rim.points;
+    expect(farR![0] - farL![0]).toBeLessThan(nearR![0] - nearL![0]);
+  });
+  it("真上は中央で、枠の外を暗くする", () => {
+    const g = potGuide("round", "top");
+    expect(g.anchor).toEqual([0.5, 0.5]);
+    expect(g.hole).not.toBeNull();
+    expect(g.outline[0]).toMatchObject({ kind: "ellipse", rx: 0.36, ry: 0.36 });
+  });
+  it("場所の角度は既定で見下ろし。切り替えて保存できる", () => {
+    const s = initialState();
+    expect(s.beds[0]?.viewAngle).toBe("oblique");
+    const t = run(s, { type: "setViewAngle", bedId: "bed_1", view: "top" });
+    expect(t.beds[0]?.viewAngle).toBe("top");
+    expect(normalize(JSON.parse(JSON.stringify(t)))).toEqual(t);
+    expect(normalize({ beds: [{ id: "x" }] }).beds[0]?.viewAngle).toBe("oblique");
   });
 });
 

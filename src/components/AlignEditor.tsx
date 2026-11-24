@@ -3,7 +3,7 @@ import { Check, Layers, RotateCcw, X } from "lucide-react";
 import type { Align, Bed, Photo } from "../types";
 import type { Action } from "../lib/garden";
 import { stageLine } from "../lib/photos";
-import { DEFAULT_ALIGN, POT_SHAPES, ROTATE_MAX, SCALE_MAX, SCALE_MIN, clampAlign, framesFor } from "../lib/timelapse";
+import { DEFAULT_ALIGN, DEFAULT_VIEW, POT_SHAPES, ROTATE_MAX, SCALE_MAX, SCALE_MIN, VIEW_ANGLES, clampAlign, framesFor, potGuide } from "../lib/timelapse";
 import { useEscape } from "../hooks/useEscape";
 import { styles } from "../styles";
 import { AlignedPhoto } from "./AlignedPhoto";
@@ -32,6 +32,8 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
   useEscape(onClose);
 
   const shape = bed?.potShape ?? "rect";
+  const view = bed?.viewAngle ?? DEFAULT_VIEW;
+  const guide = potGuide(shape, view);
   const series = bed ? framesFor(photos, bed.id) : [];
   const idx = series.findIndex((p) => p.id === photo.id);
   const prev = idx > 0 ? series[idx - 1] : undefined;
@@ -93,11 +95,11 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
         <button style={styles.viewerBtn} onClick={onClose} aria-label="位置合わせをやめる">
           <X size={20} aria-hidden="true" />
         </button>
-        <span style={{ ...styles.viewerCounter, textAlign: "center" }}>
-          鉢を枠に合わせる
+        <span style={{ ...styles.viewerCounter, textAlign: "center", flex: 1, minWidth: 0, fontSize: 11.5, lineHeight: 1.4 }}>
+          {guide.hint}
           <span style={{ display: "block", fontSize: 11, opacity: 0.8 }}>{stageLine(photo.stages)}</span>
         </span>
-        <button style={{ ...styles.viewerBtn, width: "auto", padding: "0 12px", background: "var(--mint)", borderColor: "var(--mint)", fontWeight: 700 }} onClick={save}>
+        <button style={{ ...styles.viewerBtn, width: "auto", padding: "0 12px", background: "var(--mint)", borderColor: "var(--mint)", fontWeight: 700, whiteSpace: "nowrap", flexShrink: 0 }} onClick={save}>
           <Check size={18} aria-hidden="true" /> 保存
         </button>
       </div>
@@ -115,11 +117,25 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
         >
           <AlignedPhoto id={photo.id} align={align} alt={stageLine(photo.stages)} style={{ position: "absolute", inset: 0 }} />
           {ghost && prev && <AlignedPhoto id={prev.id} align={prev.align} alt="" opacity={0.4} style={{ position: "absolute", inset: 0, background: "transparent", pointerEvents: "none" }} />}
-          <PotFrame shape={shape} />
+          <PotFrame shape={shape} view={view} />
         </div>
       </div>
 
       <div style={{ ...styles.viewerCap, gap: 10 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }} role="group" aria-label="撮る角度">
+          {VIEW_ANGLES.map((v) => (
+            <button
+              key={v.id}
+              aria-pressed={view === v.id}
+              disabled={!bed}
+              style={{ ...styles.tagChip, ...(view === v.id ? { background: "var(--sky-bg)", color: "var(--sky)", borderColor: "var(--sky)" } : {}) }}
+              onClick={() => bed && dispatch({ type: "setViewAngle", bedId: bed.id, view: v.id })}
+            >
+              {v.id === "oblique" ? "📐 " : "⬇️ "}
+              {v.label}
+            </button>
+          ))}
+        </div>
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }} role="group" aria-label="鉢の形">
           {POT_SHAPES.map((s) => (
             <button
@@ -149,8 +165,11 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
           <span style={styles.alignVal}>{align.rotate.toFixed(1)}°</span>
         </label>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span style={{ fontSize: 11, color: "var(--muted)" }}>ドラッグで移動・2本指で拡大と回転</span>
-          <button style={styles.histBtn} onClick={() => setAlign(DEFAULT_ALIGN)}>
+          <span style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>
+            ドラッグで移動・2本指で拡大と回転。
+            {view === "oblique" && "毎回だいたい同じ立ち位置・高さから撮ると、角度までそろいます。"}
+          </span>
+          <button style={{ ...styles.histBtn, whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => setAlign(DEFAULT_ALIGN)}>
             <RotateCcw size={14} aria-hidden="true" /> リセット
           </button>
         </div>

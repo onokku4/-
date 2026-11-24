@@ -1,4 +1,4 @@
-import type { Align, Photo, PotShape, SoilTypeId } from "../types";
+import type { Align, Photo, PotShape, SoilTypeId, ViewAngle } from "../types";
 
 /** 位置合わせしていない写真は、正方形にトリミングして中央 */
 export const DEFAULT_ALIGN: Align = { x: 0, y: 0, scale: 1, rotate: 0 };
@@ -74,6 +74,82 @@ export const durationSec = (frames: number, fps: number): number => (fps > 0 ? M
 /** 経過時間（秒）から表示するコマ。ループ再生 */
 export const frameAt = (elapsedSec: number, fps: number, frames: number): number =>
   frames <= 0 ? 0 : Math.floor(Math.max(0, elapsedSec) * fps) % frames;
+
+export const VIEW_ANGLES: readonly { id: ViewAngle; label: string }[] = [
+  { id: "oblique", label: "見下ろし" },
+  { id: "top", label: "真上" },
+];
+export const DEFAULT_VIEW: ViewAngle = "oblique";
+
+/** 枠を描く図形（正方形・一辺1の座標） */
+export type GuideShape =
+  | { kind: "ellipse"; cx: number; cy: number; rx: number; ry: number }
+  | { kind: "rect"; x: number; y: number; w: number; h: number; radius: number }
+  | { kind: "poly"; points: [number, number][]; closed: boolean };
+
+export interface PotGuide {
+  /** 点線で描く輪郭 */
+  outline: GuideShape[];
+  /** 枠の外を暗くするときの穴（null なら暗くしない） */
+  hole: GuideShape[] | null;
+  /** 合わせる目印（鉢の縁の中心） */
+  anchor: [number, number];
+  /** 位置合わせ画面のひとこと */
+  hint: string;
+}
+
+/**
+ * 鉢の枠。
+ * 真上：鉢の縁を画面の中央に。
+ * 見下ろし：鉢を画面の下寄りに置き、上は株が伸びる余白にする。縁は奥が狭い楕円・台形に見える
+ */
+export const potGuide = (shape: PotShape, view: ViewAngle): PotGuide => {
+  if (view === "top") {
+    const f = potFrame(shape);
+    const s: GuideShape = f.kind === "circle" ? { kind: "ellipse", cx: f.cx, cy: f.cy, rx: f.r, ry: f.r } : f;
+    return { outline: [s], hole: [s], anchor: [0.5, 0.5], hint: "鉢の縁を枠に合わせる" };
+  }
+  switch (shape) {
+    case "round": {
+      // 縁（楕円）と、下へすぼまる胴
+      const cx = 0.5, cy = 0.66, rx = 0.27, ry = 0.085;
+      const bottomY = 0.93, bottomHalf = 0.2;
+      return {
+        outline: [
+          { kind: "ellipse", cx, cy, rx, ry },
+          { kind: "poly", points: [[cx - rx, cy], [cx - bottomHalf, bottomY], [cx + bottomHalf, bottomY], [cx + rx, cy]], closed: false },
+        ],
+        hole: null,
+        anchor: [cx, cy],
+        hint: "鉢の縁（楕円）と左右の側面を枠に合わせる",
+      };
+    }
+    case "square": {
+      const far = 0.6, near = 0.75, farHalf = 0.2, nearHalf = 0.25, bottom = 0.93, bottomHalf = 0.23;
+      return {
+        outline: [
+          { kind: "poly", points: [[0.5 - farHalf, far], [0.5 + farHalf, far], [0.5 + nearHalf, near], [0.5 - nearHalf, near]], closed: true },
+          { kind: "poly", points: [[0.5 - nearHalf, near], [0.5 - bottomHalf, bottom], [0.5 + bottomHalf, bottom], [0.5 + nearHalf, near]], closed: false },
+        ],
+        hole: null,
+        anchor: [0.5, (far + near) / 2],
+        hint: "鉢の縁（台形）と手前の面を枠に合わせる",
+      };
+    }
+    case "rect": {
+      const far = 0.64, near = 0.78, farHalf = 0.36, nearHalf = 0.44, bottom = 0.92, bottomHalf = 0.43;
+      return {
+        outline: [
+          { kind: "poly", points: [[0.5 - farHalf, far], [0.5 + farHalf, far], [0.5 + nearHalf, near], [0.5 - nearHalf, near]], closed: true },
+          { kind: "poly", points: [[0.5 - nearHalf, near], [0.5 - bottomHalf, bottom], [0.5 + bottomHalf, bottom], [0.5 + nearHalf, near]], closed: false },
+        ],
+        hole: null,
+        anchor: [0.5, (far + near) / 2],
+        hint: "プランターの縁（台形）と手前の面を枠に合わせる",
+      };
+    }
+  }
+};
 
 /**
  * 縦スクロールの透明度。画面中央からの距離（0=中央、1=画面の端）で、

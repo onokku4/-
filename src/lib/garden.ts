@@ -1,4 +1,4 @@
-import type { Align, BadgeId, Bed, CareEvent, DiaryEntry, GardenState, Plant, PotShape, SoilTypeId, WeatherLog, WeatherReading } from "../types";
+import type { Align, BadgeId, Bed, CareEvent, DiaryEntry, GardenState, Plant, PotShape, SoilTypeId, ViewAngle, WeatherLog, WeatherReading } from "../types";
 import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilType, varietyOf } from "../data/catalog";
 import { CROP_BADGE_HARVESTS, GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
@@ -20,6 +20,7 @@ export type Action =
   /** 写真の位置合わせ。null で解除（中央・等倍に戻す） */
   | { type: "setPhotoAlign"; id: string; align: Align | null }
   | { type: "setPotShape"; bedId: string; shape: PotShape }
+  | { type: "setViewAngle"; bedId: string; view: ViewAngle }
   | { type: "remove"; uid: string }
   | { type: "editPlant"; uid: string; projectName?: string; plantedDate?: string; bedId?: string }
   | { type: "renameBed"; bedId: string; name: string }
@@ -288,6 +289,8 @@ export function apply(s: GardenState, a: Action): Outcome {
     }
     case "setPotShape":
       return s.beds.some((b) => b.id === a.bedId) ? quiet({ ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, potShape: a.shape } : b)) }) : quiet(s);
+    case "setViewAngle":
+      return s.beds.some((b) => b.id === a.bedId) ? quiet({ ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, viewAngle: a.view } : b)) }) : quiet(s);
     case "setPhotoTags":
       return quiet({ ...s, photos: s.photos.map((p) => (p.id === a.id ? { ...p, tags: [...new Set(a.tags)] } : p)) });
     case "waterFeedback": {

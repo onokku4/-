@@ -3,7 +3,7 @@ import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
 import { CONDITIONS, DEFAULT_WEATHER, clampTemp, roundCoord } from "./weather";
-import { clampAlign, defaultPotShape } from "./timelapse";
+import { DEFAULT_VIEW, clampAlign, defaultPotShape } from "./timelapse";
 import { findFertilizer } from "../data/fertilizers";
 import { findSoilMix } from "../data/soils";
 
@@ -42,6 +42,7 @@ const toBed = (r: Raw): Bed | undefined =>
         fedAt: strOrNull(r.fedAt),
         fertilizer: findFertilizer(str(r.fertilizer))?.id ?? null,
         potShape: r.potShape === "round" || r.potShape === "square" || r.potShape === "rect" ? r.potShape : defaultPotShape(isSoil(r.type) ? r.type : "planter"),
+        viewAngle: r.viewAngle === "top" ? "top" : DEFAULT_VIEW,
       }
     : undefined;
 

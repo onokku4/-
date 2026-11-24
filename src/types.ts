@@ -93,6 +93,8 @@ export interface Bed extends Nutrients {
   fertilizer: string | null;
   /** 鉢の形（写真の位置合わせの枠） */
   potShape: PotShape;
+  /** 撮る角度（枠の見え方が変わる） */
+  viewAngle: ViewAngle;
 }
 
 export interface HarvestRecord {
@@ -161,6 +163,8 @@ export interface GrowthStage {
 /** 成長記録の写真。画像本体は IndexedDB（ui/photoStore.ts）に id で保存し、ここにはメタ情報だけ持つ */
 /** 鉢の形（上から見た形）。写真の位置合わせの枠に使う */
 export type PotShape = "round" | "square" | "rect";
+/** 撮る角度。見下ろし（立って斜め上から）か真上か */
+export type ViewAngle = "oblique" | "top";
 
 /**
  * 写真の位置合わせ。正方形の枠（一辺1）に対して、写真の中心をどれだけずらし（x, y）、
