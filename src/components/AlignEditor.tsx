@@ -1,9 +1,10 @@
 import { useRef, useState } from "react";
-import { Check, Layers, RotateCcw, X } from "lucide-react";
-import type { Align, Bed, Photo } from "../types";
+import { Bookmark, Check, Layers, Plus, RotateCcw, X } from "lucide-react";
+import type { Align, Bed, FrameAdjust, FramePreset, Photo } from "../types";
 import type { Action } from "../lib/garden";
 import { stageLine } from "../lib/photos";
-import { DEFAULT_ALIGN, DEFAULT_VIEW, POT_SHAPES, ROTATE_MAX, SCALE_MAX, SCALE_MIN, VIEW_ANGLES, clampAlign, framesFor, potGuide } from "../lib/timelapse";
+import { newId } from "../ui/id";
+import { DEFAULT_ALIGN, DEFAULT_FRAME, DEFAULT_VIEW, FRAME_LIMITS, POT_SHAPES, ROTATE_MAX, SCALE_MAX, SCALE_MIN, VIEW_ANGLES, baseAnchorY, clampAlign, clampFrame, framesFor, potGuide, remapAlign } from "../lib/timelapse";
 import { useEscape } from "../hooks/useEscape";
 import { styles } from "../styles";
 import { AlignedPhoto } from "./AlignedPhoto";
@@ -13,6 +14,7 @@ interface Props {
   photo: Photo;
   bed: Bed | undefined;
   photos: Photo[];
+  presets: FramePreset[];
   dispatch: (a: Action) => void;
   onClose: () => void;
 }
@@ -23,9 +25,14 @@ type Pt = { x: number; y: number };
  * 写真の鉢を、画面の鉢の枠に合わせる。ドラッグで移動、2本指（またはスライダー）で拡大・回転。
  * 前回の写真を薄く重ねて、同じ位置にそろえられる
  */
-export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
+export function AlignEditor({ photo, bed, photos, presets, dispatch, onClose }: Props) {
   const [align, setAlign] = useState<Align>(photo.align ?? DEFAULT_ALIGN);
   const [ghost, setGhost] = useState(true);
+  /** 写真を動かすか、枠を調整するか */
+  const [mode, setMode] = useState<"photo" | "frame">("photo");
+  /** 枠は保存を押すまで下書き。保存時に、この場所の他の写真も新しい枠へ一緒に動かす */
+  const [frame, setFrame] = useState<FrameAdjust>(bed?.frame ?? DEFAULT_FRAME);
+  const [presetName, setPresetName] = useState<string | null>(null);
   const stage = useRef<HTMLDivElement>(null);
   const pointers = useRef(new Map<number, Pt>());
   const pinch = useRef<{ dist: number; angle: number; mid: Pt } | null>(null);
@@ -33,13 +40,17 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
 
   const shape = bed?.potShape ?? "rect";
   const view = bed?.viewAngle ?? DEFAULT_VIEW;
-  const guide = potGuide(shape, view);
+  const guide = potGuide(shape, view, frame);
+  const savedFrame = bed?.frame ?? DEFAULT_FRAME;
   const series = bed ? framesFor(photos, bed.id) : [];
   const idx = series.findIndex((p) => p.id === photo.id);
   const prev = idx > 0 ? series[idx - 1] : undefined;
 
   const size = () => stage.current?.clientWidth || 1;
   const update = (f: (a: Align) => Partial<Align>) => setAlign((a) => clampAlign({ ...a, ...f(a) }));
+  const updateFrame = (f: (fr: FrameAdjust) => Partial<FrameAdjust>) => setFrame((fr) => clampFrame({ ...fr, ...f(fr) }));
+  // 前回の写真は、下書きの枠に合わせて動かして重ねる
+  const ghostAlign = prev?.align ? remapAlign(prev.align, baseAnchorY(shape, view), savedFrame, frame) : prev?.align;
 
   const twoFinger = () => {
     const [a, b] = [...pointers.current.values()];
@@ -61,6 +72,17 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
     if (!before) return;
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const L = size();
+    if (mode === "frame") {
+      if (pointers.current.size === 1) updateFrame((fr) => ({ y: fr.y + (e.clientY - before.y) / L }));
+      else if (pointers.current.size === 2 && pinch.current) {
+        const now = twoFinger();
+        if (!now) return;
+        const p = pinch.current;
+        updateFrame((fr) => ({ size: fr.size * (now.dist / (p.dist || 1)), y: fr.y + (now.mid.y - p.mid.y) / L }));
+        pinch.current = now;
+      }
+      return;
+    }
     if (pointers.current.size === 1) {
       const dx = (e.clientX - before.x) / L;
       const dy = (e.clientY - before.y) / L;
@@ -82,11 +104,28 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
     pointers.current.delete(e.pointerId);
     pinch.current = pointers.current.size === 2 ? twoFinger() : null;
   };
-  const onWheel = (e: React.WheelEvent) => update((a) => ({ scale: a.scale * (e.deltaY < 0 ? 1.05 : 1 / 1.05) }));
+  const onWheel = (e: React.WheelEvent) =>
+    mode === "frame"
+      ? updateFrame((fr) => ({ size: fr.size * (e.deltaY < 0 ? 1.04 : 1 / 1.04) }))
+      : update((a) => ({ scale: a.scale * (e.deltaY < 0 ? 1.05 : 1 / 1.05) }));
 
   const save = () => {
+    // 枠を先に（他の写真も一緒に動く）、そのあとこの写真の位置合わせを上書き
+    if (bed && (frame.size !== savedFrame.size || frame.y !== savedFrame.y || frame.tilt !== savedFrame.tilt)) dispatch({ type: "setFrame", bedId: bed.id, frame });
     dispatch({ type: "setPhotoAlign", id: photo.id, align });
     onClose();
+  };
+  const savePreset = () => {
+    const name = (presetName ?? "").trim();
+    if (!name) return;
+    dispatch({ type: "saveFramePreset", id: newId(), name, shape, view, frame });
+    setPresetName(null);
+  };
+  const applyPreset = (p: FramePreset) => {
+    if (!bed) return;
+    if (p.shape !== shape) dispatch({ type: "setPotShape", bedId: bed.id, shape: p.shape });
+    if (p.view !== view) dispatch({ type: "setViewAngle", bedId: bed.id, view: p.view });
+    setFrame(p.frame);
   };
 
   return (
@@ -113,11 +152,11 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
           onPointerCancel={onUp}
           onWheel={onWheel}
           style={{ position: "relative", width: "min(100%, 70vh)", aspectRatio: "1 / 1", touchAction: "none", cursor: "grab", borderRadius: 12, overflow: "hidden" }}
-          aria-label="ドラッグで移動、2本指で拡大・回転"
+          aria-label={mode === "frame" ? "上下ドラッグで枠を移動、2本指で枠の大きさ" : "ドラッグで移動、2本指で拡大・回転"}
         >
           <AlignedPhoto id={photo.id} align={align} alt={stageLine(photo.stages)} style={{ position: "absolute", inset: 0 }} />
-          {ghost && prev && <AlignedPhoto id={prev.id} align={prev.align} alt="" opacity={0.4} style={{ position: "absolute", inset: 0, background: "transparent", pointerEvents: "none" }} />}
-          <PotFrame shape={shape} view={view} />
+          {ghost && prev && <AlignedPhoto id={prev.id} align={ghostAlign} alt="" opacity={0.4} style={{ position: "absolute", inset: 0, background: "transparent", pointerEvents: "none" }} />}
+          <PotFrame shape={shape} view={view} frame={frame} active={mode === "frame"} />
         </div>
       </div>
 
@@ -154,6 +193,79 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
             </button>
           )}
         </div>
+        <div style={styles.subTabs} role="tablist" aria-label="調整するもの">
+          <button role="tab" aria-selected={mode === "photo"} style={{ ...styles.subTab, ...(mode === "photo" ? styles.subTabActive : {}) }} onClick={() => setMode("photo")}>
+            写真を合わせる
+          </button>
+          <button role="tab" aria-selected={mode === "frame"} style={{ ...styles.subTab, ...(mode === "frame" ? styles.subTabActive : {}) }} onClick={() => setMode("frame")}>
+            枠を調整
+          </button>
+        </div>
+        {mode === "frame" ? (
+          <>
+            <label style={styles.alignRow}>
+              <span style={styles.alignLabel}>枠の大きさ</span>
+              <input type="range" min={FRAME_LIMITS.size[0]} max={FRAME_LIMITS.size[1]} step={0.01} value={frame.size} onChange={(e) => updateFrame(() => ({ size: e.target.valueAsNumber }))} aria-label="枠の大きさ" style={{ flex: 1 }} />
+              <span style={styles.alignVal}>{Math.round(frame.size * 100)}%</span>
+            </label>
+            <label style={styles.alignRow}>
+              <span style={styles.alignLabel}>上下の位置</span>
+              <input type="range" min={FRAME_LIMITS.y[0]} max={FRAME_LIMITS.y[1]} step={0.005} value={frame.y} onChange={(e) => updateFrame(() => ({ y: e.target.valueAsNumber }))} aria-label="枠の上下の位置" style={{ flex: 1 }} />
+              <span style={styles.alignVal}>{frame.y > 0 ? "+" : ""}{Math.round(frame.y * 100)}</span>
+            </label>
+            <label style={styles.alignRow}>
+              <span style={styles.alignLabel}>{view === "oblique" ? "縁の厚み" : "縦の長さ"}</span>
+              <input type="range" min={FRAME_LIMITS.tilt[0]} max={FRAME_LIMITS.tilt[1]} step={0.01} value={frame.tilt} onChange={(e) => updateFrame(() => ({ tilt: e.target.valueAsNumber }))} aria-label={view === "oblique" ? "縁の厚み" : "枠の縦の長さ"} style={{ flex: 1 }} />
+              <span style={styles.alignVal}>×{frame.tilt.toFixed(2)}</span>
+            </label>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }} role="group" aria-label="枠のプリセット">
+              <Bookmark size={13} color="var(--muted)" aria-hidden="true" />
+              {presets.length === 0 && presetName === null && <span style={{ fontSize: 11, color: "var(--muted)" }}>よく使う枠を保存しておけます</span>}
+              {presets.map((p) => (
+                <span key={p.id} style={{ display: "inline-flex", alignItems: "center" }}>
+                  <button style={{ ...styles.tagChip, borderTopRightRadius: 0, borderBottomRightRadius: 0 }} onClick={() => applyPreset(p)} aria-label={`枠「${p.name}」を使う`}>
+                    {p.name}
+                  </button>
+                  <button
+                    style={{ ...styles.tagChip, borderLeft: "none", borderTopLeftRadius: 0, borderBottomLeftRadius: 0, padding: "3px 6px" }}
+                    onClick={() => window.confirm(`枠「${p.name}」を削除しますか？`) && dispatch({ type: "removeFramePreset", id: p.id })}
+                    aria-label={`枠「${p.name}」を削除`}
+                  >
+                    <X size={10} aria-hidden="true" />
+                  </button>
+                </span>
+              ))}
+              {presetName === null ? (
+                <button style={{ ...styles.tagChip, color: "var(--mint)", borderColor: "var(--mint)" }} onClick={() => setPresetName(`${POT_SHAPES.find((x) => x.id === shape)?.label ?? ""}・${VIEW_ANGLES.find((v) => v.id === view)?.label ?? ""}`)}>
+                  <Plus size={10} aria-hidden="true" style={{ verticalAlign: -1 }} /> この枠を保存
+                </button>
+              ) : (
+                <form
+                  style={{ display: "inline-flex", gap: 4, alignItems: "center" }}
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    savePreset();
+                  }}
+                >
+                  <input style={{ ...styles.editInput, width: 150, padding: "4px 8px", fontSize: 12 }} value={presetName} onChange={(e) => setPresetName(e.target.value)} aria-label="プリセットの名前" autoFocus />
+                  <button type="submit" style={styles.editBtn} aria-label="プリセットを保存" disabled={!presetName.trim()}>
+                    <Check size={13} aria-hidden="true" />
+                  </button>
+                  <button type="button" style={styles.editBtn} aria-label="保存をやめる" onClick={() => setPresetName(null)}>
+                    <X size={13} aria-hidden="true" />
+                  </button>
+                </form>
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 11, color: "var(--muted)", lineHeight: 1.5 }}>上下ドラッグで枠を移動・2本指で大きさ。保存すると、この場所の他の写真も新しい枠に合わせて動きます。</span>
+              <button style={{ ...styles.histBtn, whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => setFrame(DEFAULT_FRAME)}>
+                <RotateCcw size={14} aria-hidden="true" /> 枠を戻す
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
         <label style={styles.alignRow}>
           <span style={styles.alignLabel}>大きさ</span>
           <input type="range" min={SCALE_MIN} max={SCALE_MAX} step={0.01} value={align.scale} onChange={(e) => update(() => ({ scale: e.target.valueAsNumber }))} aria-label="大きさ" style={{ flex: 1 }} />
@@ -173,6 +285,8 @@ export function AlignEditor({ photo, bed, photos, dispatch, onClose }: Props) {
             <RotateCcw size={14} aria-hidden="true" /> リセット
           </button>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -95,6 +95,8 @@ export interface Bed extends Nutrients {
   potShape: PotShape;
   /** 撮る角度（枠の見え方が変わる） */
   viewAngle: ViewAngle;
+  /** 枠の大きさ・位置・縁の厚み */
+  frame: FrameAdjust;
 }
 
 export interface HarvestRecord {
@@ -165,6 +167,22 @@ export interface GrowthStage {
 export type PotShape = "round" | "square" | "rect";
 /** 撮る角度。見下ろし（立って斜め上から）か真上か */
 export type ViewAngle = "oblique" | "top";
+
+/** 鉢の枠の調整。size＝大きさの倍率、y＝上下の位置（画面の高さに対する比率）、tilt＝縁の厚み（縦の伸び） */
+export interface FrameAdjust {
+  size: number;
+  y: number;
+  tilt: number;
+}
+
+/** 保存した枠のプリセット（鉢の形・撮る角度・調整） */
+export interface FramePreset {
+  id: string;
+  name: string;
+  shape: PotShape;
+  view: ViewAngle;
+  frame: FrameAdjust;
+}
 
 /**
  * 写真の位置合わせ。正方形の枠（一辺1）に対して、写真の中心をどれだけずらし（x, y）、
@@ -242,6 +260,8 @@ export interface GardenState {
   location: GardenLocation | null;
   photos: Photo[];
   diary: DiaryEntry[];
+  /** 保存した鉢の枠のプリセット */
+  framePresets: FramePreset[];
   /** 最後にバックアップを保存した日時（ISO）。未保存なら null */
   lastBackupAt: string | null;
   autoWeather: boolean;

@@ -1,9 +1,9 @@
-import type { BadgeId, Bed, CareEvent, CareKind, Condition, DiaryEntry, GardenLocation, GardenState, GrowthStage, HarvestRecord, Photo, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
+import type { BadgeId, Bed, CareEvent, CareKind, Condition, DiaryEntry, FramePreset, GardenLocation, PotShape, GardenState, GrowthStage, HarvestRecord, Photo, Plant, SoilTypeId, WeatherLog, WeatherState } from "../types";
 import { defaultProjectName, findCrop, varietyOf } from "../data/catalog";
 import { BADGES } from "../data/game";
 import { initialState } from "./garden";
 import { CONDITIONS, DEFAULT_WEATHER, clampTemp, roundCoord } from "./weather";
-import { DEFAULT_VIEW, clampAlign, defaultPotShape } from "./timelapse";
+import { DEFAULT_VIEW, clampAlign, clampFrame, defaultPotShape } from "./timelapse";
 import { findFertilizer } from "../data/fertilizers";
 import { findSoilMix } from "../data/soils";
 
@@ -43,6 +43,7 @@ const toBed = (r: Raw): Bed | undefined =>
         fertilizer: findFertilizer(str(r.fertilizer))?.id ?? null,
         potShape: r.potShape === "round" || r.potShape === "square" || r.potShape === "rect" ? r.potShape : defaultPotShape(isSoil(r.type) ? r.type : "planter"),
         viewAngle: r.viewAngle === "top" ? "top" : DEFAULT_VIEW,
+        frame: clampFrame(isObj(r.frame) ? r.frame : null),
       }
     : undefined;
 
@@ -154,6 +155,13 @@ const toDiary = (r: Raw, plantUids: Set<string>): DiaryEntry | undefined =>
     ? { id: r.id, date: r.date, text: r.text, plantUid: typeof r.plantUid === "string" && plantUids.has(r.plantUid) ? r.plantUid : null, tags: strList(r.tags) }
     : undefined;
 
+const isShape = (v: unknown): v is PotShape => v === "round" || v === "square" || v === "rect";
+
+const toPreset = (r: Raw): FramePreset | undefined =>
+  typeof r.id === "string" && typeof r.name === "string" && r.name.trim() && isShape(r.shape)
+    ? { id: r.id, name: r.name.trim(), shape: r.shape, view: r.view === "top" ? "top" : DEFAULT_VIEW, frame: clampFrame(isObj(r.frame) ? r.frame : null) }
+    : undefined;
+
 const toCare = (r: Raw): CareEvent | undefined =>
   isDate(r.date) && isCareKind(r.kind) ? { date: r.date, kind: r.kind, label: str(r.label) } : undefined;
 
@@ -181,6 +189,7 @@ export function normalize(raw: unknown): GardenState {
     location: toLocation(raw.location),
     photos: list(raw.photos).map(toPhoto).filter(defined),
     diary: list(raw.diary).map((d) => toDiary(d, plantUids)).filter(defined),
+    framePresets: list(raw.framePresets).map(toPreset).filter(defined),
     lastBackupAt: strOrNull(raw.lastBackupAt),
     autoWeather: raw.autoWeather === true,
     notifyOn: raw.notifyOn === true,

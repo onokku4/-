@@ -93,6 +93,8 @@ legacy/garden.jsx       移行前の単一ファイル版（参照用。編集�
 - 日記（`diary`）と写真の `tags` は同じタグ集合（`PHOTO_TAGS`）。病害虫タグは「去年の今頃」の先回り表示とカレンダーの🐛に使う。
 - 写真の位置合わせは元画像を変えず `photo.align`（x, y, scale, rotate。正方形の枠に対する比率）に持つ。CSS（`AlignedPhoto`）と canvas（`drawAligned`）は同じ変換で描く。既定値に戻したら `align` を消す。
 - 鉢の形は `bed.potShape`（round / square / rect）、撮る角度は `bed.viewAngle`（oblique＝見下ろし・既定 / top＝真上）。既定の形はプランター＝長方形、畑＝四角。見下ろしの枠は鉢を下寄り（縁の中心 y≈0.66〜0.7）に置き、上を株の余白にする。枠の外は暗くしない。
+- 枠の調整は `bed.frame`（size・y・tilt）。`setFrame` は形・角度が同じなら、その場所の位置合わせ済み写真を `remapAlign` で新しい枠へ一緒に動かす（縁の厚み tilt は動かさない）。位置合わせ画面では枠は下書きで、保存時に setFrame → setPhotoAlign の順に送る。
+- 枠のプリセットは `framePresets`（名前・形・角度・調整）。同じ名前は上書き。
 - アプリは土の成分を**測れない**。`soils.ts` の値は一般的な目安で、袋の表示が優先。
 
 ## 作物を足すとき

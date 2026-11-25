@@ -94,7 +94,7 @@ export const styles = {
   gazeDay: { fontFamily: "var(--display)", fontSize: 24 },
   gazeDate: { fontFamily: "var(--mono)", fontSize: 12, opacity: 0.85 },
   alignRow: { display: "flex", alignItems: "center", gap: 10 },
-  alignLabel: { fontSize: 12, fontWeight: 700, color: "var(--muted)", width: 44 },
+  alignLabel: { fontSize: 12, fontWeight: 700, color: "var(--muted)", width: 66, flexShrink: 0 },
   alignVal: { fontFamily: "var(--mono)", fontSize: 11.5, color: "var(--muted)", width: 52, textAlign: "right" },
   feedbackBtn: {
     background: "var(--panel-2)", border: "1px solid var(--line)", borderRadius: 7, padding: "3px 8px",

@@ -219,6 +219,7 @@ export function App() {
           photo={state.photos.find((p) => p.id === aligning)!}
           bed={state.beds.find((b) => b.id === state.photos.find((p) => p.id === aligning)?.bedId)}
           photos={state.photos}
+          presets={state.framePresets}
           dispatch={dispatch}
           onClose={() => setAligning(null)}
         />

@@ -1,6 +1,6 @@
 import { useId } from "react";
-import type { PotShape, ViewAngle } from "../types";
-import { potGuide, type GuideShape } from "../lib/timelapse";
+import type { FrameAdjust, PotShape, ViewAngle } from "../types";
+import { DEFAULT_FRAME, potGuide, type GuideShape } from "../lib/timelapse";
 
 const draw = (g: GuideShape, key: number) => {
   switch (g.kind) {
@@ -16,9 +16,10 @@ const draw = (g: GuideShape, key: number) => {
 };
 
 /** 鉢の枠のオーバーレイ。真上は枠の外を暗く、見下ろしは株が伸びる上側を見せたいので輪郭だけ */
-export function PotFrame({ shape, view, dim = 0.45 }: { shape: PotShape; view: ViewAngle; dim?: number }) {
+export function PotFrame({ shape, view, frame = DEFAULT_FRAME, dim = 0.45, active = false }: { shape: PotShape; view: ViewAngle; frame?: FrameAdjust; dim?: number; active?: boolean }) {
   const maskId = useId();
-  const g = potGuide(shape, view);
+  const g = potGuide(shape, view, frame);
+  const color = active ? "#ffd27a" : "#fff";
   const [ax, ay] = g.anchor;
   return (
     <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }} aria-hidden="true">
@@ -38,7 +39,7 @@ export function PotFrame({ shape, view, dim = 0.45 }: { shape: PotShape; view: V
       <g fill="none" stroke="rgba(0,0,0,.35)" strokeWidth="1.1">
         {g.outline.map(draw)}
       </g>
-      <g fill="none" stroke="#fff" strokeWidth="0.55" strokeDasharray="2 1.5" strokeLinejoin="round">
+      <g fill="none" stroke={color} strokeWidth={active ? 0.8 : 0.55} strokeDasharray={active ? undefined : "2 1.5"} strokeLinejoin="round">
         {g.outline.map(draw)}
       </g>
       <g stroke="rgba(255,255,255,.6)" strokeWidth="0.3">

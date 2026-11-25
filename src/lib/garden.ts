@@ -1,10 +1,10 @@
-import type { Align, BadgeId, Bed, CareEvent, DiaryEntry, GardenState, Plant, PotShape, SoilTypeId, ViewAngle, WeatherLog, WeatherReading } from "../types";
+import type { Align, BadgeId, Bed, CareEvent, DiaryEntry, FrameAdjust, GardenState, Plant, PotShape, SoilTypeId, ViewAngle, WeatherLog, WeatherReading } from "../types";
 import { canGrowIn, defaultProjectName, findCrop, pollinationOf, resolve, soilType, varietyOf } from "../data/catalog";
 import { CROP_BADGE_HARVESTS, GREEN_THUMB_XP, XP } from "../data/game";
 import { daysBetween } from "./date";
 import { diagnose } from "./pollination";
 import { growthStages } from "./photos";
-import { clampAlign, isDefaultAlign } from "./timelapse";
+import { baseAnchorY, clampAlign, clampFrame, isDefaultAlign, remapAlign } from "./timelapse";
 import { afterHarvest, fed, newBed, refreshed } from "./soil";
 import { DEFAULT_WEATHER, adjust, applyAuto, manualDaily, mergeLog, resetToAuto } from "./weather";
 
@@ -21,6 +21,11 @@ export type Action =
   | { type: "setPhotoAlign"; id: string; align: Align | null }
   | { type: "setPotShape"; bedId: string; shape: PotShape }
   | { type: "setViewAngle"; bedId: string; view: ViewAngle }
+  /** 枠の大きさ・位置・縁の厚み。その場所の位置合わせ済みの写真も一緒に動かす */
+  | { type: "setFrame"; bedId: string; frame: FrameAdjust }
+  | { type: "saveFramePreset"; id: string; name: string; shape: PotShape; view: ViewAngle; frame: FrameAdjust }
+  | { type: "applyFramePreset"; bedId: string; presetId: string }
+  | { type: "removeFramePreset"; id: string }
   | { type: "remove"; uid: string }
   | { type: "editPlant"; uid: string; projectName?: string; plantedDate?: string; bedId?: string }
   | { type: "renameBed"; bedId: string; name: string }
@@ -67,6 +72,7 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
   location: null,
   photos: [],
   diary: [],
+  framePresets: [],
   lastBackupAt: null,
   autoWeather: false,
   notifyOn: false,
@@ -75,6 +81,23 @@ export const initialState = (bedId = "bed_1"): GardenState => ({
 });
 
 const quiet = (state: GardenState): Outcome => ({ state, newBadges: [] });
+
+/**
+ * 場所の枠を変える。形と角度が同じなら、その場所の位置合わせ済みの写真を新しい枠へ一緒に動かす
+ * （大きさ・上下の位置だけ。縁の厚みは写真の見え方を変えられないので動かさない）
+ */
+const reframe = (s: GardenState, bedId: string, next: { shape: PotShape; view: ViewAngle; frame: FrameAdjust }): GardenState => {
+  const bed = s.beds.find((b) => b.id === bedId);
+  if (!bed) return s;
+  const frame = clampFrame(next.frame);
+  const sameGeometry = bed.potShape === next.shape && bed.viewAngle === next.view;
+  const moved = sameGeometry && (bed.frame.size !== frame.size || bed.frame.y !== frame.y);
+  const ay0 = baseAnchorY(next.shape, next.view);
+  const photos = moved
+    ? s.photos.map((p) => (p.bedId === bedId && p.align ? { ...p, align: remapAlign(p.align, ay0, bed.frame, frame) } : p))
+    : s.photos;
+  return { ...s, photos, beds: s.beds.map((b) => (b.id === bedId ? { ...b, potShape: next.shape, viewAngle: next.view, frame } : b)) };
+};
 
 /** 世話の記録を足す（カレンダー用）。同じ日・同じ種類・同じ対象は1件にまとめる */
 const logged = (s: GardenState, ev: CareEvent): GardenState =>
@@ -289,6 +312,25 @@ export function apply(s: GardenState, a: Action): Outcome {
     }
     case "setPotShape":
       return s.beds.some((b) => b.id === a.bedId) ? quiet({ ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, potShape: a.shape } : b)) }) : quiet(s);
+    case "setFrame": {
+      const bed = s.beds.find((b) => b.id === a.bedId);
+      return bed ? quiet(reframe(s, a.bedId, { shape: bed.potShape, view: bed.viewAngle, frame: a.frame })) : quiet(s);
+    }
+    case "saveFramePreset": {
+      const name = a.name.trim();
+      if (!name) return quiet(s);
+      const preset = { id: a.id, name, shape: a.shape, view: a.view, frame: clampFrame(a.frame) };
+      // 同じ名前は上書き
+      const rest = s.framePresets.filter((p) => p.name !== name && p.id !== a.id);
+      return { state: { ...s, framePresets: [...rest, preset] }, newBadges: [], toast: `📐 枠「${name}」を保存しました` };
+    }
+    case "applyFramePreset": {
+      const p = s.framePresets.find((x) => x.id === a.presetId);
+      if (!p || !s.beds.some((b) => b.id === a.bedId)) return quiet(s);
+      return { state: reframe(s, a.bedId, p), newBadges: [], toast: `📐 枠「${p.name}」を使います` };
+    }
+    case "removeFramePreset":
+      return s.framePresets.some((p) => p.id === a.id) ? quiet({ ...s, framePresets: s.framePresets.filter((p) => p.id !== a.id) }) : quiet(s);
     case "setViewAngle":
       return s.beds.some((b) => b.id === a.bedId) ? quiet({ ...s, beds: s.beds.map((b) => (b.id === a.bedId ? { ...b, viewAngle: a.view } : b)) }) : quiet(s);
     case "setPhotoTags":

@@ -1,4 +1,4 @@
-import type { Align, Photo, PotShape, SoilTypeId, ViewAngle } from "../types";
+import type { Align, FrameAdjust, Photo, PotShape, SoilTypeId, ViewAngle } from "../types";
 
 /** 位置合わせしていない写真は、正方形にトリミングして中央 */
 export const DEFAULT_ALIGN: Align = { x: 0, y: 0, scale: 1, rotate: 0 };
@@ -98,57 +98,86 @@ export interface PotGuide {
   hint: string;
 }
 
+export const DEFAULT_FRAME: FrameAdjust = { size: 1, y: 0, tilt: 1 };
+export const FRAME_LIMITS = { size: [0.5, 1.6], y: [-0.35, 0.25], tilt: [0.4, 2.2] } as const;
+
+export const clampFrame = (f: Partial<FrameAdjust> | undefined | null): FrameAdjust => {
+  const n = (v: unknown, d: number) => (typeof v === "number" && Number.isFinite(v) ? v : d);
+  const r = (v: number, [lo, hi]: readonly [number, number]) => Math.round(clamp(v, lo, hi) * 1000) / 1000;
+  return { size: r(n(f?.size, 1), FRAME_LIMITS.size), y: r(n(f?.y, 0), FRAME_LIMITS.y), tilt: r(n(f?.tilt, 1), FRAME_LIMITS.tilt) };
+};
+export const isDefaultFrame = (f: FrameAdjust): boolean => f.size === 1 && f.y === 0 && f.tilt === 1;
+
+/** 枠の基準点（縁の中心）の y。調整前。見下ろしは下寄り、真上は中央 */
+export const baseAnchorY = (shape: PotShape, view: ViewAngle): number => {
+  if (view === "top") return 0.5;
+  return shape === "round" ? 0.66 : shape === "square" ? 0.675 : 0.71;
+};
+
 /**
  * 鉢の枠。
  * 真上：鉢の縁を画面の中央に。
- * 見下ろし：鉢を画面の下寄りに置き、上は株が伸びる余白にする。縁は奥が狭い楕円・台形に見える
+ * 見下ろし：鉢を画面の下寄りに置き、上は株が伸びる余白にする。縁は奥が狭い楕円・台形に見える。
+ * frame で大きさ（基準点を中心に拡大）・上下の位置・縁の厚みを調整する
  */
-export const potGuide = (shape: PotShape, view: ViewAngle): PotGuide => {
+export const potGuide = (shape: PotShape, view: ViewAngle, frame: FrameAdjust = DEFAULT_FRAME): PotGuide => {
+  const ay0 = baseAnchorY(shape, view);
+  const { size, y: dy, tilt } = frame;
+  const tx = (x: number) => 0.5 + (x - 0.5) * size;
+  const ty = (y: number) => ay0 + dy + (y - ay0) * size;
+  const pt = ([x, y]: [number, number]): [number, number] => [tx(x), ty(y)];
+  const anchor: [number, number] = [0.5, ay0 + dy];
+
   if (view === "top") {
-    const f = potFrame(shape);
-    const s: GuideShape = f.kind === "circle" ? { kind: "ellipse", cx: f.cx, cy: f.cy, rx: f.r, ry: f.r } : f;
-    return { outline: [s], hole: [s], anchor: [0.5, 0.5], hint: "鉢の縁を枠に合わせる" };
+    if (shape === "round") {
+      const s: GuideShape = { kind: "ellipse", cx: 0.5, cy: ty(0.5), rx: 0.36 * size, ry: 0.36 * size * tilt };
+      return { outline: [s], hole: [s], anchor, hint: "鉢の縁を枠に合わせる" };
+    }
+    const w = shape === "square" ? 0.66 : 0.86;
+    const h = (shape === "square" ? 0.66 : 0.4) * tilt;
+    const r = shape === "square" ? 0.04 : 0.03;
+    const s: GuideShape = { kind: "rect", x: tx(0.5 - w / 2), y: ty(0.5 - h / 2), w: w * size, h: h * size, radius: r * size };
+    return { outline: [s], hole: [s], anchor, hint: "鉢の縁を枠に合わせる" };
   }
-  switch (shape) {
-    case "round": {
-      // 縁（楕円）と、下へすぼまる胴
-      const cx = 0.5, cy = 0.66, rx = 0.27, ry = 0.085;
-      const bottomY = 0.93, bottomHalf = 0.2;
-      return {
-        outline: [
-          { kind: "ellipse", cx, cy, rx, ry },
-          { kind: "poly", points: [[cx - rx, cy], [cx - bottomHalf, bottomY], [cx + bottomHalf, bottomY], [cx + rx, cy]], closed: false },
-        ],
-        hole: null,
-        anchor: [cx, cy],
-        hint: "鉢の縁（楕円）と左右の側面を枠に合わせる",
-      };
-    }
-    case "square": {
-      const far = 0.6, near = 0.75, farHalf = 0.2, nearHalf = 0.25, bottom = 0.93, bottomHalf = 0.23;
-      return {
-        outline: [
-          { kind: "poly", points: [[0.5 - farHalf, far], [0.5 + farHalf, far], [0.5 + nearHalf, near], [0.5 - nearHalf, near]], closed: true },
-          { kind: "poly", points: [[0.5 - nearHalf, near], [0.5 - bottomHalf, bottom], [0.5 + bottomHalf, bottom], [0.5 + nearHalf, near]], closed: false },
-        ],
-        hole: null,
-        anchor: [0.5, (far + near) / 2],
-        hint: "鉢の縁（台形）と手前の面を枠に合わせる",
-      };
-    }
-    case "rect": {
-      const far = 0.64, near = 0.78, farHalf = 0.36, nearHalf = 0.44, bottom = 0.92, bottomHalf = 0.43;
-      return {
-        outline: [
-          { kind: "poly", points: [[0.5 - farHalf, far], [0.5 + farHalf, far], [0.5 + nearHalf, near], [0.5 - nearHalf, near]], closed: true },
-          { kind: "poly", points: [[0.5 - nearHalf, near], [0.5 - bottomHalf, bottom], [0.5 + bottomHalf, bottom], [0.5 + nearHalf, near]], closed: false },
-        ],
-        hole: null,
-        anchor: [0.5, (far + near) / 2],
-        hint: "プランターの縁（台形）と手前の面を枠に合わせる",
-      };
-    }
+
+  if (shape === "round") {
+    const rx = 0.27, ry = 0.085 * tilt, bottomY = ay0 + 0.27, bottomHalf = 0.2;
+    return {
+      outline: [
+        { kind: "ellipse", cx: 0.5, cy: ty(ay0), rx: rx * size, ry: ry * size },
+        { kind: "poly", points: [pt([0.5 - rx, ay0]), pt([0.5 - bottomHalf, bottomY]), pt([0.5 + bottomHalf, bottomY]), pt([0.5 + rx, ay0])], closed: false },
+      ],
+      hole: null,
+      anchor,
+      hint: "鉢の縁（楕円）と左右の側面を枠に合わせる",
+    };
   }
+  const g = shape === "square" ? { half: 0.075, farHalf: 0.2, nearHalf: 0.25, body: 0.18, bottomHalf: 0.23 } : { half: 0.07, farHalf: 0.36, nearHalf: 0.44, body: 0.14, bottomHalf: 0.43 };
+  const far = ay0 - g.half * tilt;
+  const near = ay0 + g.half * tilt;
+  const bottom = near + g.body;
+  return {
+    outline: [
+      { kind: "poly", points: [pt([0.5 - g.farHalf, far]), pt([0.5 + g.farHalf, far]), pt([0.5 + g.nearHalf, near]), pt([0.5 - g.nearHalf, near])], closed: true },
+      { kind: "poly", points: [pt([0.5 - g.nearHalf, near]), pt([0.5 - g.bottomHalf, bottom]), pt([0.5 + g.bottomHalf, bottom]), pt([0.5 + g.nearHalf, near])], closed: false },
+    ],
+    hole: null,
+    anchor,
+    hint: shape === "square" ? "鉢の縁（台形）と手前の面を枠に合わせる" : "プランターの縁（台形）と手前の面を枠に合わせる",
+  };
+};
+
+/**
+ * 枠の大きさ・位置を変えたとき、その枠に合わせてあった写真を一緒に動かす。
+ * 枠の基準点を中心に同じ倍率で拡大し、上下のずれぶん移す（縁の厚みの変更は動かさない）
+ */
+export const remapAlign = (a: Align, anchorY0: number, from: FrameAdjust, to: FrameAdjust): Align => {
+  const k = to.size / from.size;
+  const cx = 0.5 + a.x;
+  const cy = 0.5 + a.y;
+  const nx = 0.5 + (cx - 0.5) * k;
+  const ny = anchorY0 + to.y + (cy - anchorY0 - from.y) * k;
+  return clampAlign({ x: nx - 0.5, y: ny - 0.5, scale: a.scale * k, rotate: a.rotate });
 };
 
 /**
